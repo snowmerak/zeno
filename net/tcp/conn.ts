@@ -17,9 +17,6 @@ export interface TcpConn {
   /** Close the connection. */
   close(): Promise<void>;
 
-  /** Half-close the write side (if supported by underlying platform). */
-  closeWrite(): Promise<void>;
-
   /** The local address of this connection. */
   readonly localAddr: Deno.NetAddr;
 
@@ -76,14 +73,13 @@ export class TcpConnImpl implements TcpConn {
   }
 
   async close(): Promise<void> {
-    this._conn.close();
-  }
-
-  async closeWrite(): Promise<void> {
     try {
-      await this._conn.writable.close();
-    } catch {
-      // Ignore if already closed or not supported
+      this._conn.close();
+    } catch (err) {
+      // Ignore "Bad resource" errors on double close (common in tests and real usage)
+      if (!(err instanceof Deno.errors.BadResource)) {
+        throw err;
+      }
     }
   }
 

@@ -114,7 +114,7 @@ We can aim for a **similar ergonomic feel** while staying true to Deno's async/s
 - Consider separating Framing utilities into their own module
 
 **Graceful Shutdown**:
-- Review support for `close()` + `closeWrite()` style on `TcpListener` (within the limits of current Deno.Conn)
+- `close()` is supported. Half-close is currently out of scope due to Deno limitations.
 
 ---
 
@@ -155,7 +155,7 @@ await conn.close();
 - `read(p: Uint8Array): Promise<number | null>`
 - `write(p: Uint8Array): Promise<number>`
 - `close(): Promise<void>`
-- `closeWrite(): Promise<void>` (when possible)
+- `close(): Promise<void>`
 - `readable: ReadableStream<Uint8Array>`
 - `writable: WritableStream<Uint8Array>`
 - `localAddr`, `remoteAddr`
