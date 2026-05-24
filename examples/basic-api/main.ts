@@ -82,6 +82,47 @@ app.get("/protected", fakeAuth, async (ctx: Context) => {
   return ctx.json({ secret: "this is protected data" });
 });
 
+// DELETE route
+app.delete("/users/:id", async (ctx: Context) => {
+  return ctx.json({ deleted: ctx.params.id, success: true });
+});
+
+// PUT route (update)
+app.put("/users/:id", async (ctx: Context) => {
+  const body = await ctx.req.json().catch(() => ({}));
+  return ctx.json({
+    updated: ctx.params.id,
+    data: body,
+    success: true,
+  });
+});
+
+// Query parameter demo
+app.get("/search", async (ctx: Context) => {
+  const q = ctx.query.get("q") ?? "";
+  const limit = ctx.query.get("limit") ?? "10";
+  return ctx.json({
+    query: q,
+    limit: parseInt(limit),
+    results: [`result for ${q}`],
+  });
+});
+
+// POST with body (create)
+app.post("/users", async (ctx: Context) => {
+  const body = await ctx.req.json().catch(() => ({}));
+  ctx.status(201);
+  return ctx.json({
+    created: true,
+    user: body,
+  });
+});
+
+// Demonstrate throwing error (will be caught by onError if set)
+app.get("/error", async () => {
+  throw new Error("This is a demo error");
+});
+
 console.log("🚀 @zeno/http example running at http://localhost:8000");
 console.log("");
 console.log("Try:");
@@ -89,6 +130,10 @@ console.log("  curl http://localhost:8000/");
 console.log("  curl http://localhost:8000/users/42");
 console.log("  curl -X POST http://localhost:8000/echo -H 'Content-Type: application/json' -d '{\"hello\":\"world\"}'");
 console.log("  curl -H 'Authorization: Bearer xxx' http://localhost:8000/protected");
+console.log("  curl -X DELETE http://localhost:8000/users/42");
+console.log("  curl -X PUT http://localhost:8000/users/42 -H 'Content-Type: application/json' -d '{\"name\":\"new\"}'");
+console.log("  curl 'http://localhost:8000/search?q=deno&limit=5'");
+console.log("  curl -X POST http://localhost:8000/users -H 'Content-Type: application/json' -d '{\"name\":\"snow\"}'");
 
 const port = Number(Deno.env.get("PORT") || 8000);
 
