@@ -68,9 +68,15 @@ export async function connectToListener(
   listener: TcpListener,
 ): Promise<TcpConn> {
   const addr = listener.addr;
-  const conn = await (await import("../../net/tcp/mod.ts")).dialTCP(
-    `${addr.hostname}:${addr.port}`,
-  );
+
+  // Normalize address for local testing (0.0.0.0 / :: cannot be connected to directly on some OSes)
+  let hostname = addr.hostname;
+  if (hostname === "0.0.0.0" || hostname === "::") {
+    hostname = "127.0.0.1";
+  }
+
+  const { dialTCP } = await import("../../net/tcp/mod.ts");
+  const conn = await dialTCP(`${hostname}:${addr.port}`);
   return conn;
 }
 
