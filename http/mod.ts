@@ -7,10 +7,14 @@
  * 공식 설계 문서: ../skills/http/SKILL.md
  */
 
-// Re-exports will be added as implementation progresses
+// Core exports
 export * from "./router.ts";
 export * from "./context.ts";
 export * from "./trie.ts";
+export * from "./types.ts";
 
-// Placeholder for now
+// Middleware utilities (advanced use)
+export { compose, normalizeHandlers } from "./middleware/compose.ts";
+
+// Version
 export const VERSION = "0.0.1";

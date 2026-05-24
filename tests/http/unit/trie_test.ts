@@ -1,11 +1,21 @@
 /**
- * Tests for PathTrie (Radix Tree)
+ * PathTrie (Radix Tree) Unit Tests
  *
- * Heavy dogfooding of @std/assert and Deno's test runner.
+ * @zeno/http의 라우팅 핵심인 PathTrie를 집중적으로 검증하는 테스트입니다.
+ *
+ * 주요 검증 포인트:
+ * - Static path 매칭
+ * - Named parameter (:id) 추출
+ * - Wildcard (* 및 :name*) 지원
+ * - Priority (static > param > wildcard)
+ * - Shared prefix 처리 ( /api/v1 vs /api/v2 등 )
+ *
+ * Trie는 라우터의 가장 중요한 내부 컴포넌트 중 하나이므로,
+ * 엣지 케이스까지 꼼꼼하게 테스트하고 있습니다.
  */
 
 import { assertEquals, assertExists } from "@std/assert";
-import { PathTrie } from "../../http/trie.ts";
+import { PathTrie } from "../../../http/trie.ts";
 
 Deno.test("PathTrie - static paths", () => {
   const trie = new PathTrie<string>();
