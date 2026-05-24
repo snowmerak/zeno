@@ -185,6 +185,27 @@ Deno.serve(app.fetch); // 또는 app.listen(...)
 
 이 내용은 Trie 구현이 진행될수록 계속 업데이트되어야 한다.
 
+### Router.fetch this-binding 안전성 확보 (2026-05, basic-api 실서버 테스트 중)
+
+**발견 배경**: "basic-api에 핸들러 대량 추가 + kill & restart & curl 테스트" 단계에서 `Deno.serve({ port }, app.fetch)` 호출 시 매 요청마다 `TypeError: Cannot read properties of undefined (reading 'findRoute')` (router.ts:134) 가 발생. Group 리팩토링 후 실사용 경로가 늘어나면서 latent bug가 표면화됨.
+
+**원인**: `fetch`가 일반 클래스 메서드(`async fetch(req)`)였기 때문에 bare function reference 추출 시 `this`가 undefined (strict mode). fetch 내부의 모든 `this.findRoute`, `this.pathMethods`, `this.globalMiddlewares` 등이 깨짐. (테스트에서는 `app.fetch(req)` 직접 호출이라 this가 유지되어 통과.)
+
+**해결**: `fetch`를 인스턴스 arrow field로 전환
+```ts
+fetch = async (req: Request): Promise<Response> => {
+  // ... 기존 본문 (this. 모두 안전)
+};
+```
+이제 `Deno.serve(app.fetch)`, `const h = app.fetch; h(req)`, any callback 전달 모두 안전.
+
+**영향 및 교훈**:
+- examples/basic-api, http/README.md, SKILL.md 예시의 `Deno.serve(app.fetch)` 가 이제 **실제로 동작**함.
+- Deno/Web API handler를 외부에 노출할 때는 arrow field (또는 생성자에서 bind)가 dogfooding best practice.
+- "kill → 재실행 → 실제 curl로 새 핸들러들 (DELETE/PUT/search/POST body /error) 테스트" 요청을 수행하면서 찾아낸 중요한 안정화 수정.
+
+이런 runtime this-binding 이슈도 명시적으로 기록하여 미래 agent가 같은 함정에 빠지지 않게 한다.
+
 ---
 
 ## 7. 이 Skill을 업데이트해야 하는 경우

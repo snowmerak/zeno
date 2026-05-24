@@ -126,7 +126,7 @@ export class Router implements IRouteRegistrar {
   /**
    * Main entry point. Use this as Deno.serve handler.
    */
-  async fetch(req: Request): Promise<Response> {
+  fetch = async (req: Request): Promise<Response> => {
     const url = new URL(req.url);
     const method = req.method;
 
@@ -246,7 +246,7 @@ export class Router implements IRouteRegistrar {
 
       return new Response("Internal Server Error", { status: 500 });
     }
-  }
+  };
 
   private findRoute(method: string, pathname: string): RouteMatch | null {
     const trie = this.tries.get(method);
