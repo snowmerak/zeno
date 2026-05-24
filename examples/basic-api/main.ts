@@ -9,7 +9,7 @@
  * - Promise-only handlers
  */
 
-import { createApp, Middleware } from "../../http/mod.ts";
+import { createApp, Middleware, type Context } from "../../http/mod.ts";
 
 const app = createApp();
 
@@ -29,33 +29,33 @@ const requestLogger: Middleware = async (ctx, next) => {
 app.use(requestLogger);
 
 // Simple route
-app.get("/", async (ctx) => {
+app.get("/", async (ctx: Context) => {
   return ctx.text("Hello from @zeno/http! (Fiber-like)");
 });
 
 // Demonstrate new Context helpers
-app.get("/redirect", async (ctx) => {
+app.get("/redirect", async (ctx: Context) => {
   return ctx.redirect("https://deno.com", 302);
 });
 
-app.get("/html-demo", async (ctx) => {
+app.get("/html-demo", async (ctx: Context) => {
   ctx.status(200);
   return ctx.html("<h1>Hello from html() helper</h1>");
 });
 
 // Cookie demo
-app.get("/set-cookie", async (ctx) => {
+app.get("/set-cookie", async (ctx: Context) => {
   ctx.setCookie("zeno-session", "abc123", { httpOnly: true, path: "/" });
   return ctx.text("Cookie set! Check your cookies.");
 });
 
-app.get("/get-cookie", async (ctx) => {
+app.get("/get-cookie", async (ctx: Context) => {
   const session = ctx.getCookie("zeno-session");
   return ctx.json({ session: session ?? "no cookie found" });
 });
 
 // Route with param
-app.get("/users/:id", async (ctx) => {
+app.get("/users/:id", async (ctx: Context) => {
   return ctx.json({
     id: ctx.params.id,
     message: "User fetched successfully",
@@ -63,7 +63,7 @@ app.get("/users/:id", async (ctx) => {
 });
 
 // Using .handle (Fiber style)
-app.handle("POST", "/echo", async (ctx) => {
+app.handle("POST", "/echo", async (ctx: Context) => {
   const body = await ctx.req.json().catch(() => ({}));
   return ctx.json({ received: body, method: "POST via .handle" });
 });
@@ -78,7 +78,7 @@ const fakeAuth: Middleware = async (ctx, next) => {
   return next();
 };
 
-app.get("/protected", fakeAuth, async (ctx) => {
+app.get("/protected", fakeAuth, async (ctx: Context) => {
   return ctx.json({ secret: "this is protected data" });
 });
 
@@ -93,7 +93,7 @@ console.log("  curl -H 'Authorization: Bearer xxx' http://localhost:8000/protect
 const port = Number(Deno.env.get("PORT") || 8000);
 
 try {
-  Deno.serve(app.fetch, { port });
+  Deno.serve({ port }, app.fetch);
 } catch (err) {
   if (err instanceof Deno.errors.AddrInUse) {
     console.error(`Port ${port} is already in use. Try: PORT=8001 deno task dev`);

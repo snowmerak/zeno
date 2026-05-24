@@ -197,8 +197,8 @@ export class Router implements IRouteRegistrar {
       return new Response("Not Found", { status: 404 });
     }
 
-    // Global middlewares + route-specific handlers
-    const allLayers: Middleware[] = [
+    // Global middlewares + route-specific handlers (kept for potential future use / debugging)
+    const _allLayers: Middleware[] = [
       ...this.globalMiddlewares,
       ...(match.route.handlers as Middleware[]),
     ];
@@ -215,7 +215,7 @@ export class Router implements IRouteRegistrar {
     );
 
     try {
-      let result = await composed(ctx);
+      const result = await composed(ctx);
 
       // If something returned a Response directly, use it
       if (result instanceof Response) {
@@ -296,7 +296,7 @@ export class Router implements IRouteRegistrar {
    */
   group(prefix: string, fn: (router: IRouteRegistrar) => void): this {
     const inheritedMiddlewares: Middleware[] = this instanceof RouterGroup 
-      ? [...(this as any).groupMiddlewares] 
+      ? [...(this as RouterGroup)._middlewares] 
       : [];
     
     const subRouter = new RouterGroup(this, prefix, inheritedMiddlewares);
@@ -346,6 +346,11 @@ class RouterGroup implements IRouteRegistrar {
   private groupMiddlewares: Middleware[] = [];
   private groupNotFound?: Handler;
   private groupMethodNotAllowed?: (ctx: Context, allowed: string) => Response | Promise<Response>;
+
+  /** Internal: used by parent Router for middleware inheritance in nested groups */
+  get _middlewares(): Middleware[] {
+    return this.groupMiddlewares;
+  }
 
   constructor(
     private parent: Router, 
