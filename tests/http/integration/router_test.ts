@@ -139,14 +139,14 @@ Deno.test("Router - onError handler", async () => {
 /* ============================================================
  * Middleware Composition & Execution Order
  *
- * 이 섹션에서는 Middleware의 실행 순서, early return, afterware,
- * 에러 전파 등을 집중적으로 검증합니다.
+ * This section focuses on verifying middleware execution order, early returns, afterware,
+ * error propagation, etc.
  *
- * 특히 중요한 점:
- * - Global → Route level 순서 보장
- * - Afterware(next() 이후 로직)가 제대로 실행되는가
- * - 미들웨어가 Response를 반환하면 이후 체인이 중단되는가 (short-circuit)
- * - 에러가 발생했을 때 onError가 잘 호출되는가
+ * Particularly important points:
+ * - Global → Route level execution order guarantee
+ * - Whether afterware (logic after next()) executes properly
+ * - Whether the chain stops if a middleware returns a Response (short-circuit)
+ * - Whether onError is properly called when an error occurs
  * ============================================================ */
 
 Deno.test("Router - middleware execution order (global then route)", async () => {
@@ -285,11 +285,11 @@ Deno.test("Router - 405 Method Not Allowed", async () => {
   app.get("/users", async (ctx: Context) => ctx.text("get users"));
   app.post("/users", async (ctx: Context) => ctx.text("create user"));
 
-  // GET은 등록되어 있음
+  // GET is registered
   const getRes = await makeRequest(app, "/users");
   assertEquals(getRes.status, 200);
 
-  // PUT은 등록 안 됨 → 405
+  // PUT is not registered → 405
   const putRes = await makeRequest(app, "/users", { method: "PUT" });
   assertEquals(putRes.status, 405);
   assertEquals(putRes.headers.get("allow"), "GET, POST");
@@ -462,9 +462,9 @@ Deno.test("Router - nested groups with middleware", async () => {
 
   const res = await makeRequest(app, "/api/v1/users");
 
-  // 100회 반복 검증 결과 (2026-05 기준): 404 재현되지 않음.
-  // 이전에 관찰되던 flakiness가 Group 개선 후 안정화된 것으로 판단하여
-  // hedging assertion을 제거하고 strict하게 변경.
+  // 100-run verification result (as of 2026-05): No 404 reproduced.
+  // The previously observed flakiness has stabilized after Group improvements,
+  // so the hedging assertion has been removed and changed to strict.
   assertEquals(res.status, 200);
 });
 
@@ -626,8 +626,8 @@ Deno.test("Router - group + global middleware combination", async () => {
  * ============================================================ */
 
 Deno.test("Router - error thrown inside afterware is still caught by onError", async () => {
-  // afterware(핸들러 실행 후 실행되는 미들웨어) 안에서 에러가 발생해도
-  // onError 핸들러가 정상적으로 호출되는지 검증하는 중요한 테스트입니다.
+  // Important test to verify that even if an error occurs inside afterware
+  // (middleware that runs after the handler), the onError handler is still properly invoked.
   const app = createTestApp();
 
   const buggyAfterware: Middleware = async (ctx, next) => {
@@ -761,10 +761,11 @@ Deno.test("Router - next() called multiple times throws in compose (covers compo
 });
 
 /* ============================================================
- * 고난도 Middleware + Error + Afterware 조합 테스트
+ * High-Difficulty Middleware + Error + Afterware Combination Tests
  *
- * 이 섹션은 복잡한 미들웨어 조합에서 에러와 afterware가 어떻게 상호작용하는지를
- * 집중적으로 검증한다. 실제 운영에서 자주 발생할 수 있는 tricky한 시나리오 위주.
+ * This section intensively verifies how errors and afterware interact
+ * in complex middleware compositions. It focuses on tricky scenarios
+ * that can frequently occur in real production environments.
  * ============================================================ */
 
 Deno.test("Router - afterware does NOT run if a later middleware throws", async () => {
@@ -800,7 +801,7 @@ Deno.test("Router - afterware does NOT run if a later middleware throws", async 
 
   const res = await makeRequest(app, "/after-error-order");
   assertEquals(res.status, 500);
-  // after1의 after-logic은 throwing middleware 때문에 실행되지 않음 (정상적인 onion model 동작)
+  // after1's after-logic does not run because of the throwing middleware (normal onion model behavior)
   assertEquals(afterware1Ran, false);
   assertEquals(afterware2Ran, false);
 });
@@ -840,9 +841,9 @@ Deno.test("Router - global afterware + group afterware + route error", async () 
 
   const res = await makeRequest(app, "/api/error");
   assertEquals(res.status, 500);
-  // 현재 compose 동작 상, group 내부에서 에러가 발생하면
-  // globalAfter와 groupAfter의 after-logic 모두 실행되지 않음.
-  // 이 테스트는 현재 실제 동작을 기록한다.
+  // Under current compose behavior, if an error occurs inside a group,
+  // the after-logic of both globalAfter and groupAfter does not execute.
+  // This test records the actual current behavior.
   assertEquals(globalAfterRan, false);
   assertEquals(groupAfterRan, false);
 });
@@ -901,9 +902,10 @@ Deno.test("Context - setCookie and getCookie roundtrip via real request (current
 
   // First request sets the cookie
   const setRes = await makeRequest(app, "/set");
-  // NOTE: setCookie + Response 생성 경로에서 Set-Cookie 헤더가
-  // 일부 반환 패턴(특히 test helper 조합)에서 신뢰도 있게 붙지 않는 residual limitation이 있음.
-  // getCookie 자체는 Request 헤더에서 잘 동작하므로, 이 테스트는 getCookie 동작 검증에 집중.
+  // NOTE: There is a residual limitation where the Set-Cookie header
+  // does not attach reliably in some return patterns (especially test helper combinations)
+  // in the setCookie + Response creation path.
+  // Since getCookie itself works well from the Request header, this test focuses on verifying getCookie behavior.
   const getRes = await makeRequest(app, "/get", {
     headers: { cookie: "session=abc-123" },
   });
@@ -914,13 +916,13 @@ Deno.test("Context - setCookie and getCookie roundtrip via real request (current
 /* ============================================================
  * Context Helpers - Real Integration Tests
  *
- * Context에 추가된 편의 메서드들(status, redirect, html, setCookie, getCookie 등)이
- * 실제 HTTP 요청/응답 흐름에서 올바르게 동작하는지 검증합니다.
+ * Verifies whether the convenience methods added to Context (status, redirect, html, setCookie, getCookie, etc.)
+ * work correctly in real HTTP request/response flows.
  *
- * 주의: 현재 일부 헬퍼(status, setCookie 등)의 구현이 아직 완벽하지 않아
- * 기대한 대로 동작하지 않는 경우가 있습니다.
- * 이런 경우에는 테스트에 "current limitations"라고 명시하고,
- * 구현이 개선될 때 테스트도 함께 강화할 수 있도록 작성했습니다.
+ * Note: Currently, the implementation of some helpers (status, setCookie, etc.) is not yet perfect,
+ * so there are cases where they do not behave as expected.
+ * In such cases, we explicitly mark the test as "current limitations" and write it so that
+ * the test can be strengthened together when the implementation is improved.
  * ============================================================ */
 
 Deno.test("Context - status() affects response status code", async () => {

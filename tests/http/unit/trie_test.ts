@@ -1,17 +1,17 @@
 /**
  * PathTrie (Radix Tree) Unit Tests
  *
- * @zeno/http의 라우팅 핵심인 PathTrie를 집중적으로 검증하는 테스트입니다.
+ * Tests that intensively verify PathTrie, the core routing component of @zeno/http.
  *
- * 주요 검증 포인트:
- * - Static path 매칭
- * - Named parameter (:id) 추출
- * - Wildcard (* 및 :name*) 지원
+ * Main verification points:
+ * - Static path matching
+ * - Named parameter (:id) extraction
+ * - Wildcard (* and :name*) support
  * - Priority (static > param > wildcard)
- * - Shared prefix 처리 ( /api/v1 vs /api/v2 등 )
+ * - Shared prefix handling (e.g. /api/v1 vs /api/v2)
  *
- * Trie는 라우터의 가장 중요한 내부 컴포넌트 중 하나이므로,
- * 엣지 케이스까지 꼼꼼하게 테스트하고 있습니다.
+ * Since Trie is one of the most important internal components of the router,
+ * we are carefully testing even edge cases.
  */
 
 import { assertEquals, assertExists } from "@std/assert";

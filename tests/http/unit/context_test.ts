@@ -1,17 +1,17 @@
 /**
- * Context Helper Tests (고도화 버전)
+ * Context Helper Tests (Enhanced Version)
  *
- * @zeno/http의 Context에 추가된 편의 메서드들(status, redirect, html, setCookie, getCookie 등)을
- * 단위 수준에서 철저하게 검증하는 테스트입니다.
+ * Unit-level tests that thoroughly verify the convenience methods added to Context in @zeno/http
+ * (status, redirect, html, setCookie, getCookie, etc.).
  *
- * 테스트 목적:
- * - 각 헬퍼가 의도한 대로 동작하는지 검증
- * - Cookie 파싱의 엣지 케이스(공백, URL 인코딩, 다중 쿠키 등) 철저히 커버
- * - status() chaining, setCookie 다중 호출 등의 실사용 패턴 검증
- * - 현재 구현의 잔여 한계를 integration 테스트와 함께 참고 (주로 cookie header reliability)
+ * Test objectives:
+ * - Verify that each helper works as intended
+ * - Thoroughly cover edge cases in cookie parsing (whitespace, URL encoding, multiple cookies, etc.)
+ * - Verify real-world usage patterns such as status() chaining and multiple setCookie calls
+ * - Reference current implementation limitations together with integration tests (mainly cookie header reliability)
  *
- * 주의: 이 파일의 테스트들은 단위 테스트 성격이 강하므로,
- * 실제 HTTP 요청/응답에서의 동작은 integration 테스트에서 더 자세히 검증합니다.
+ * Note: Tests in this file are strongly unit-test oriented,
+ * so real HTTP request/response behavior is verified in more detail in integration tests.
  */
 
 import { assertEquals, assertExists } from "@std/assert";

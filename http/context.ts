@@ -1,15 +1,15 @@
 /**
  * @zeno/http - Context
  * 
- * Hybrid 스타일 Context (Locked Decision)
- * - Web Standard Request/Response 기반
- * - 실사용에 필요한 helper는 Context에 직접 제공 (Fiber-like DX)
+ * Hybrid-style Context (Locked Decision)
+ * - Based on Web Standard Request/Response
+ * - Provides necessary helpers directly on Context for real usage (Fiber-like DX)
  * 
- * 자세한 설계 근거: ../skills/http/SKILL.md
+ * Detailed design rationale: ../skills/http/SKILL.md
  */
 
 export interface Context {
-  /** 원본 Request (Web Standard) */
+  /** Original Request (Web Standard) */
   readonly req: Request;
 
   /**
@@ -35,11 +35,11 @@ export interface Context {
 }
 
 /**
- * Context를 생성하는 내부 팩토리
+ * Internal factory that creates Context
  * 
- * Builder 스타일로 재작성:
- * - status, setCookie 등은 내부 상태만 변경
- * - json/text/html 등은 내부 상태를 반영하여 Response를 생성
+ * Rewritten in Builder style:
+ * - status, setCookie, etc. only modify internal state
+ * - json/text/html etc. generate a Response reflecting the internal state
  */
 export function createContext(req: Request, initialParams: Record<string, string> = {}): Context {
   const url = new URL(req.url);

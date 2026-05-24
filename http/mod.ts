@@ -1,10 +1,10 @@
 /**
  * @zeno/http
  * 
- * Zeno 프로젝트의 첫 번째 라이브러리.
+ * The first library of the Zeno project.
  * Fiber-like HTTP routing for Deno, built from scratch on Deno primitives + @std/*.
  * 
- * 공식 설계 문서: ../skills/http/SKILL.md
+ * Official design document: ../skills/http/SKILL.md
  */
 
 // Core exports

@@ -1,38 +1,38 @@
 # @zeno/http
 
-**Zeno 프로젝트의 첫 번째 공식 라이브러리**
+**Zeno project's first official library**
 
-Go의 Fiber와 유사한 개발자 경험을 **순수 Deno** 위에서 제공하는 HTTP 라우팅 라이브러리입니다.
+An HTTP routing library that provides a developer experience similar to Go's Fiber on **pure Deno**.
 
-> **중요**: 이 라이브러리는 Hono나 Oak를 기반으로 하지 않습니다.  
-> Deno의 기본 API(`Deno.serve`, Web Standards) + `@std/*`만 사용하여 처음부터 직접 구현합니다.  
-> (최대 개밥먹기 목적)
+> **Important**: This library does not use Hono or Oak as a base.  
+> It is built from scratch using only Deno's basic APIs (`Deno.serve`, Web Standards) + `@std/*`.  
+> (Maximum dogfooding purpose)
 
-## 공식 문서 (Agent Skill)
+## Official Documentation (Agent Skill)
 
-이 라이브러리의 **최신 아키텍처, 설계 결정, dogfooding 기록**은 다음 파일에 있습니다:
+The **latest architecture, design decisions, and dogfooding records** of this library are in the following file:
 
 - [skills/http/SKILL.md](../skills/http/SKILL.md)
 
-이 파일을 **항상 최우선**으로 참고하세요. 코드와 함께 지속적으로 업데이트됩니다.
+Always refer to this file with the highest priority. It is continuously updated together with the code.
 
-## 현재 상태 (2026-05)
+## Current Status (2026-05)
 
 - Architecture locked
-- Core (Router, Group, Context Builder, Middleware, Error handling) 대부분 구현 완료
-- 85+ 테스트 통과, 실서버 dogfooding (basic-api) 검증 완료
-- Group과 Context cookie 쪽에 일부 residual weakness 존재 (테스트에 명시)
-- Stabilization / documentation hygiene 진행 중
+- Core (Router, Group, Context Builder, Middleware, Error handling) largely complete
+- 85+ tests passing, real server dogfooding (basic-api) verified
+- Some residual weakness remains in Group and Context cookie areas (explicitly noted in tests)
+- Stabilization / documentation hygiene in progress
 
-## 주요 설계 방향 (요약)
+## Main Design Directions (Summary)
 
-- **Context**: Hybrid 스타일 (Request/Response 기반 + 편한 Helper)
-- **Middleware**: Afterware가 자연스러운 Fiber-style composition
-- **Path Matching**: 처음부터 Lightweight Radix Trie 직접 구현
+- **Context**: Hybrid style (Request/Response based + convenient Helpers)
+- **Middleware**: Afterware-friendly Fiber-style composition
+- **Path Matching**: Lightweight Radix Trie implemented from scratch from the beginning
 
-자세한 내용은 `skills/http/SKILL.md` 참조.
+For more details, refer to `skills/http/SKILL.md`.
 
-## 사용 예 (목표 모습)
+## Usage Example (Target Form)
 
 ```ts
 import { createApp } from "@zeno/http";
@@ -55,7 +55,7 @@ app.group("/api/v1", (api) => {
 Deno.serve(app.fetch);
 ```
 
-## 개발
+## Development
 
 ```bash
 deno task dev          # 예제 실행 (추후)

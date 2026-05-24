@@ -1,20 +1,20 @@
 # Benchmark Scripts
 
-이 디렉토리는 @zeno/http의 성능 측정을 위한 스크립트를 모아두는 곳입니다.
+This directory collects scripts for performance measurement of @zeno/http.
 
-## 목표
+## Goals
 
 - raw `Deno.serve`
-- `@zeno/http` (우리가 만든 것)
+- `@zeno/http` (the one we built)
 - Hono
 - Oak
 
-위 4가지를 동일한 워크로드로 비교 측정.
+Compare and measure the above 4 under the same workload.
 
-## 예정 작업
+## Planned Work
 
-- 간단한 hello world 벤치
-- path parameter 벤치
-- middleware 체인 벤치
+- Simple hello world benchmark
+- Path parameter benchmark
+- Middleware chain benchmark
 
-측정 결과는 `docs/` 또는 `http/` 하위에 문서화할 예정.
+Measurement results will be documented under `docs/` or within `http/`.
