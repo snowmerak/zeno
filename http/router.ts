@@ -44,14 +44,14 @@ export class Router implements IRouteRegistrar {
   private notFoundHandler?: Handler;
   private methodNotAllowedHandler?: (ctx: Context, allowedMethods: string) => Response | Promise<Response>;
 
-  // Group별 커스텀 핸들러 (prefix → handler). 현재는 가장 긴 prefix 매칭으로 동작.
+  // Per-group custom handlers (prefix → handler). Currently uses longest prefix matching.
   private groupNotFoundHandlers: Map<string, Handler> = new Map();
   private groupMethodNotAllowedHandlers: Map<string, (ctx: Context, allowed: string) => Response | Promise<Response>> = new Map();
 
   // We use one trie per method for simplicity and performance.
   private tries: Map<string, PathTrie<Route>> = new Map();
 
-  // path별로 어떤 HTTP 메서드가 등록되어 있는지 추적 (405 구현용)
+  // Track which HTTP methods are registered per path (for 405 Method Not Allowed)
   private pathMethods: Map<string, Set<string>> = new Map();
 
   /**
@@ -108,13 +108,13 @@ export class Router implements IRouteRegistrar {
 
     this.routes.push(route);
 
-    // Trie 등록
+    // Register in Trie
     if (!this.tries.has(method)) {
       this.tries.set(method, new PathTrie<Route>());
     }
     this.tries.get(method)!.insert(path, route);
 
-    // 405 지원을 위한 path별 method 추적
+    // Track methods per path (for 405 support)
     if (!this.pathMethods.has(path)) {
       this.pathMethods.set(path, new Set());
     }
@@ -148,7 +148,7 @@ export class Router implements IRouteRegistrar {
         // 405 Method Not Allowed
         const allow = Array.from(registeredMethods).sort().join(", ");
 
-        // Group-specific methodNotAllowed 우선 (가장 구체적인 prefix)
+        // Prefer group-specific methodNotAllowed (most specific prefix)
         const groupMA = this._findBestGroupHandler(url.pathname, this.groupMethodNotAllowedHandlers);
         if (groupMA) {
           const res = await groupMA(ctx, allow);
@@ -180,7 +180,7 @@ export class Router implements IRouteRegistrar {
         });
       }
 
-      // 404 Not Found - Group specific 우선
+      // 404 Not Found - Prefer group-specific handler
       const groupNF = this._findBestGroupHandler(url.pathname, this.groupNotFoundHandlers);
       if (groupNF) {
         const res = await groupNF(ctx);
@@ -323,7 +323,7 @@ export class Router implements IRouteRegistrar {
     this.groupMethodNotAllowedHandlers.set(prefix, handler);
   }
 
-  // 가장 구체적인 (가장 긴 prefix) 그룹 핸들러 찾기
+  // Find the most specific (longest prefix) group handler
   private _findBestGroupHandler<T>(pathname: string, map: Map<string, T>): T | undefined {
     let bestPrefix = "";
     let bestHandler: T | undefined;
@@ -342,12 +342,12 @@ export class Router implements IRouteRegistrar {
  * RouterGroup - Separate class for groups (does not extend Router).
  * It only shares the IRouteRegistrar interface.
  *
- * 설계 이유 (Option A 하에서):
- * - Router가 trie의 단일 진실 공급원. Group이 독립적인 라우팅 상태를 가지면 복잡도 폭발.
- * - Route 등록 시점에 middleware를 미리 결합(eager)해서 root에 위임.
- * - Nested group은 생성 시점에 middleware를 inherited로 capture.
- * - Custom notFound 등은 prefix 단위로 root에 등록 + lookup.
- * 이 방식은 runtime을 가볍게 유지하기 위함. (자세한 rationale는 SKILL.md 참조)
+ * Design rationale (under Option A):
+ * - Router is the single source of truth for the trie. Letting Group have independent routing state would cause complexity explosion.
+ * - Middleware is eagerly combined with the route at registration time and delegated to the root.
+ * - Nested groups capture inherited middleware at construction time.
+ * - Custom notFound etc. are registered per-prefix on the root and looked up accordingly.
+ * This approach keeps the runtime path lightweight. (See SKILL.md for detailed rationale)
  */
 class RouterGroup implements IRouteRegistrar {
   private groupMiddlewares: Middleware[] = [];

@@ -1,26 +1,27 @@
 /**
  * Router Integration Tests
  *
- * 이 파일은 @zeno/http의 핵심 기능들을 실제 요청 흐름 속에서 검증하는 통합 테스트입니다.
+ * This file contains integration tests that verify the core features of @zeno/http
+ * in real request flows.
  *
- * 테스트 철학:
- * - 단순한 "기능이 동작하는가?"를 넘어, "실제 사용 시나리오에서 어떻게 동작하는가?"를 중점으로 본다.
- * - Middleware 조합, Group, Error Handling, Afterware 등 복잡한 상호작용을 중점적으로 검증.
- * - 현재 구현의 한계(Limitation)를 숨기지 않고 테스트로 명확히 문서화한다.
- *   (단, 개선이 되면 주석과 assertion을 적극적으로 업데이트하여 "한계" 기록이 outdated되지 않게 유지한다.)
+ * Test Philosophy:
+ * - Go beyond "does the feature work?" and focus on "how does it behave in real usage scenarios?"
+ * - Heavily verify complex interactions such as middleware composition, Group, Error Handling, and Afterware.
+ * - Clearly document current limitations in tests instead of hiding them.
+ *   (However, when improvements are made, actively update comments and assertions so that limitation records do not become outdated.)
  *
- * 주요 검증 영역:
- * - 기본 라우팅 + Path Parameter
- * - Global / Route-level Middleware 조합 및 실행 순서
- * - Afterware 동작 (next() 이후 로직)
+ * Main Verification Areas:
+ * - Basic routing + Path Parameters
+ * - Global / Route-level Middleware composition and execution order
+ * - Afterware behavior (logic after next())
  * - Early return / Short-circuit
- * - Error 전파 및 onError 핸들러
+ * - Error propagation and onError handler
  * - Group (prefix + middleware)
- * - 404 / 405 기본 동작 + 커스텀 핸들러
- * - Context Helper들의 실제 HTTP 요청/응답에서의 동작
+ * - Default 404 / 405 behavior + custom handlers
+ * - Real HTTP request/response behavior of Context Helpers
  *
- * test_utils.ts의 헬퍼(makeRequest, createTestApp 등)를 적극 사용하여
- * 테스트 가독성과 유지보수성을 높이고 있습니다.
+ * Heavily uses helpers from test_utils.ts (makeRequest, createTestApp, etc.)
+ * to improve test readability and maintainability.
  */
 
 import { assertEquals, assertExists } from "@std/assert";
@@ -370,28 +371,27 @@ Deno.test("Router - group with middleware", async () => {
 /* ============================================================
  * Group Feature Tests
  *
- * app.group(prefix, fn) 은 라우트 네임스페이싱(버전 관리, 기능별 분리 등)을 위한 기능입니다.
+ * app.group(prefix, fn) is a feature for route namespacing (versioning, feature separation, etc.).
  *
- * 현재 지원하는 것 (2026-05 기준):
- * - Prefix 자동 적용 (중첩 포함)
- * - 여러 단계 nested group에서의 middleware 누적 상속 (대부분 케이스 동작)
- * - Group 단위 notFound / methodNotAllowed 등록 및 우선 적용 (대부분 케이스 동작, "takes precedence" 테스트들 통과)
+ * Currently supported (as of 2026-05):
+ * - Automatic prefix application (including nesting)
+ * - Accumulated middleware inheritance across multiple levels of nested groups (works in most cases)
+ * - Registration and precedence of group-level notFound / methodNotAllowed (works in most cases; "takes precedence" tests pass)
  *
- * 남은 약점 / 주의점:
- * - 극도로 복잡한 중첩 구조 + custom notFound/methodNotAllowed 동시 사용 시 동작이 불안정할 수 있음 (일부 legacy 테스트에서 hedging assertion 사용 중)
- * - middleware 상속이 특정 nesting 패턴에서 기대보다 약할 수 있음 (관련 테스트에 약한 assertion 존재)
+ * Remaining weaknesses / notes:
+ * - Extremely complex nesting structures + simultaneous use of custom notFound/methodNotAllowed can still be unstable (some legacy tests previously used hedging assertions)
+ * - Middleware inheritance can be weaker than expected in certain nesting patterns (some related tests still have loose assertions)
  *
- * 이 섹션은 Group의 현재 실제 동작 범위를 솔직하게 반영하며,
- * "완벽"이 아닌 "현재 이렇게 동작한다"를 기준으로 작성되어 있습니다.
+ * This section honestly reflects the current actual behavior range of Group,
+ * based on "how it currently works" rather than "perfect".
  * ============================================================ */
 
 Deno.test("Router - group can register custom notFound for its prefix", async () => {
   const app = createTestApp();
 
   app.group("/api", (api) => {
-    // Group notFound 지원은 최근 개선되었으나,
-    // 극단적인 nesting + root notFound와의 우선순위 경쟁 상황에서는
-    // 여전히 불안정할 수 있어 이 테스트는 status만 확인.
+    // Group notFound support has been improved recently, but in extreme nesting + root notFound priority competition scenarios
+    // it can still be unstable, so this test only checks the status.
     api.notFound(async (ctx: Context) => {
       return ctx.json({ message: "API endpoint not found" }, { status: 404 });
     });
@@ -426,8 +426,8 @@ Deno.test("Router - multiple groups with their own middleware are isolated", asy
 Deno.test("Router - group inside group (basic nesting supported under Option A)", async () => {
   const app = createTestApp();
 
-  // Option A: 단순한 1단계 nested group (middleware 없이 route만)은 정상 지원.
-  // middleware가 들어가거나 더 깊어지면 residual risk 존재 (위 테스트 참조).
+  // Option A: Simple 1-level nested group (route only, no middleware) is normally supported.
+  // When middleware is added or nesting goes deeper, residual risk exists (see tests above).
   app.group("/a", (a) => {
     a.get("/data", jsonEchoHandler());
   });
@@ -439,13 +439,13 @@ Deno.test("Router - group inside group (basic nesting supported under Option A)"
 /* ============================================================
  * Group Tests - Practical Scope (Option A)
  *
- * 결정: Group은 "실용적 수준"으로 스코프를 제한한다.
- * - 1~2단계 nesting + middleware 누적 상속: 강하게 지원
- * - group.notFound / methodNotAllowed: 일반적인 경우 지원 (root + 1단계 group)
- * - 3단계 이상의 극단적 nesting + custom error handler 동시 사용: advanced usage로 간주, 완전 보장하지 않음
+ * Decision: Scope Group support to a "practical level".
+ * - 1~2 levels of nesting + accumulated middleware inheritance: strongly supported
+ * - group.notFound / methodNotAllowed: supported in common cases (root + 1st level group)
+ * - 3+ levels of extreme nesting + custom error handlers used together: considered advanced usage, not fully guaranteed
  *
- * 이 섹션의 테스트들은 위 스코프 내에서 동작을 검증한다.
- * (과거 hedging이 필요했던 테스트는 100회 검증 후 strict하게 변경됨)
+ * Tests in this section verify behavior within the above scope.
+ * (Previously hedged tests have been made strict after 100-run verification showed stability)
  * ============================================================ */
 
 Deno.test("Router - nested groups with middleware", async () => {
