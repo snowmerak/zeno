@@ -8,6 +8,7 @@
     "test:integration": "deno test tests/http/integration --allow-net",
     "test:all": "deno test tests/http --allow-net",
     "test:net": "deno test tests/net --allow-net",
+    "test:http-client": "deno test tests/http-client --allow-net",
     "test:coverage": "deno test tests/http --allow-net --coverage=coverage && deno coverage coverage --html",
     "bench": "deno bench",
     "fmt": "deno fmt",
