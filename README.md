@@ -10,11 +10,12 @@
 
 ## Current Libraries
 
-| Library        | Description                              | Status                  |
-|----------------|------------------------------------------|-------------------------|
-| `@zeno/http`   | Fiber-like HTTP Router (std only)        | Early implementation    |
+| Library        | Description                                      | Status                              |
+|----------------|--------------------------------------------------|-------------------------------------|
+| `@zeno/http`   | Fiber-like HTTP Router (std only)                | Early implementation                |
+| `@zeno/net`    | TCP/UDP networking library (Go `net`-inspired)   | TCP basic implementation in progress |
 
-(Planned: Redis client, HTTP client, TCP/UDP utilities, etc.)
+(Planned: Redis client, HTTP client, etc.)
 
 ## Getting Started
 
@@ -32,7 +33,7 @@ One of the core philosophies of this project:
 
 > **Whenever you add or change a feature, you must also write/update the corresponding agent skill.**
 
-- `skills/http/SKILL.md` is the official design document for `@zeno/http`.
+- `skills/http/SKILL.md` and `skills/net/SKILL.md` are the official design documents.
 - Code changes ↔ skill updates must always happen together.
 
 ## Structure
@@ -40,15 +41,16 @@ One of the core philosophies of this project:
 ```
 zeno/
 ├── http/                 # @zeno/http (first library)
-├── skills/http/          # Agent skill dedicated to @zeno/http
+├── net/                  # @zeno/net (TCP/UDP networking)
+├── skills/               # Agent skills (http/, net/, ...)
 ├── examples/             # Library usage examples (self-dogfood)
 ├── tests/
 ├── scripts/bench/        # Performance benchmarking
 └── deno.json
 ```
 
-For more details, refer to each library's subdirectory README and the `skills/` directory.
+For more details, refer to each library's subdirectory README and the corresponding skill document in the `skills/` directory.
 
-## 라이선스
+## License
 
-MIT (예정)
+MIT (planned)
