@@ -1,8 +1,8 @@
 # @zeno/http — Agent Skill
 
 **Library**: `@zeno/http` (Zeno 프로젝트의 첫 번째 공식 라이브러리)
-**Status**: Architecture locked, implementation 시작 전 (2026-05)
-**Version of this skill**: 0.1.0 (initial vision + design decisions)
+**Status**: Architecture locked + Core implementation largely complete (2026-05)
+**Version of this skill**: 0.2.0 (post Group/Context refactor + stabilization phase)
 
 ---
 
@@ -59,6 +59,19 @@ type Middleware = (ctx: Context, next: Next) => Promise<Response | void>;
 - 로깅, response time 측정, header 추가, 압축, 에러 래핑 등 "after" 작업이 편해야 함
 - 단순 before-only가 아닌, Fiber 사용자들이 기대하는 후처리 편의성을 목표
 
+### 2.4 Group 구현 방식 (Locked + Option A)
+**결정**: RouterGroup은 Router를 상속하지 않고, 별도 클래스로 만들어 `IRouteRegistrar` 인터페이스만 공유. 내부적으로 `parent: Router`를 들고 route 등록은 root에 위임.
+
+**이유**:
+- Router가 trie (실제 라우팅 상태)의 single source of truth여야 함. Group마다 trie를 두는 것은 상태 분산 + 복잡도 증가.
+- Route 등록 시점에 group의 middleware를 미리 결합(combinedHandlers)해서 root trie에 넣는 eager composition 방식.
+- Nested group은 생성 시점에 상위 middleware를 `inherited`로 전달해서 capture.
+- Custom notFound/methodNotAllowed는 prefix 단위로 root에 별도 등록 + lookup.
+
+이 방식이 "불편해 보일" 수 있지만, runtime request path를 단순하고 빠르게 유지하기 위한 선택이다. (lazy delegation at request time은 매 요청마다 group 트리를 타는 비용 발생)
+
+**Option A 적용 (2026-05)**: 위 설계 하에서 "1~2단계 nesting까지 실용적으로 잘 동작"하는 것을 목표로 하며, 그 이상의 극단적 사용은 limitation으로 명시.
+
 ### 2.3 Path Matching — Lightweight Radix Trie (from scratch)
 **결정**: URL 라우팅을 위한 가벼운 Radix Tree / Trie 자료구조를 **처음부터 직접 구현**
 
@@ -77,19 +90,22 @@ type Middleware = (ctx: Context, next: Next) => Promise<Response | void>;
 
 ## 3. MVP Scope (현재 단계)
 
-**포함**:
-- Router + Context 핵심
-- HTTP method routing (`get`, `post`, `put`, `patch`, `delete`, `any`)
-- Route grouping (`app.group(prefix, fn)` 또는 `router.group`)
-- 기본 Context helpers (json, text, params, query 등)
-- Middleware compose (afterware 지원)
-- 404 / 405 / 에러 처리 기본
+**포함 (2026-05 기준, 대부분 완료)**:
+- Router + Context (Builder) 핵심
+- HTTP method routing + PathTrie
+- Route grouping + middleware 상속 (nested 포함, 일부 edge 약함)
+- Group-level custom notFound/methodNotAllowed (대부분 동작)
+- Context helpers (status, json, text, html, redirect, cookies) - cookie header reliability에 residual weakness 존재
+- Middleware (afterware friendly)
+- onError + 404/405 처리
 
-**MVP에서 제외 (추후)**:
-- 고도화된 validation (별도 미들웨어로)
-- WebSocket 전용 지원
-- Template rendering
-- Static file serving (별도 미들웨어 추천)
+**명확한 약점 (현재 actively managing 중, Option A 적용)**:
+- Group: 1~2단계 nesting + middleware는 실용적으로 지원. 3단계 이상 + custom notFound/methodNotAllowed 동시 사용은 advanced usage로 간주 (보장 약함).
+- Context cookie: setCookie 후 Response 헤더 병합의 일부 edge case에서 신뢰도 부족.
+- 위 두 영역은 "완벽"을 추구하기보다는 실용적 스코프 + 명확한 문서화로 관리.
+
+**의도적으로 제외 (MVP 이후)**:
+- Validation, WebSocket, Static files, Template 등 (별도 미들웨어/라이브러리로)
 
 ---
 

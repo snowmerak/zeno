@@ -8,7 +8,7 @@
  * - 각 헬퍼가 의도한 대로 동작하는지 검증
  * - Cookie 파싱의 엣지 케이스(공백, URL 인코딩, 다중 쿠키 등) 철저히 커버
  * - status() chaining, setCookie 다중 호출 등의 실사용 패턴 검증
- * - 현재 구현의 한계(Limitation)를 명확히 기록 (integration 테스트와 함께 참고)
+ * - 현재 구현의 잔여 한계를 integration 테스트와 함께 참고 (주로 cookie header reliability)
  *
  * 주의: 이 파일의 테스트들은 단위 테스트 성격이 강하므로,
  * 실제 HTTP 요청/응답에서의 동작은 integration 테스트에서 더 자세히 검증합니다.

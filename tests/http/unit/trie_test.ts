@@ -172,3 +172,63 @@ Deno.test("PathTrie - wildcard catches multi-segment paths", () => {
   assertEquals(trie.find("/files/images/avatar.png")?.data, "allFiles");
   assertEquals(trie.find("/files/")?.data ?? null, "allFiles"); // edge case
 });
+
+/* ============================================================
+ * Group Nesting Simulation Tests
+ *
+ * These tests simulate the kind of path registration patterns
+ * that occur when using nested RouterGroup (e.g. /api + /v1 + /users).
+ * The goal is to stress shared ancestor prefixes that arise
+ * from successive prefix concatenation in Group.
+ * ============================================================ */
+
+Deno.test("PathTrie - group-style 2-level nesting (like /api/v1/users)", () => {
+  const trie = new PathTrie<string>();
+
+  // Simulates:
+  // app.group("/api", ...) → inner group("/v1") → get("/users")
+  trie.insert("/api/v1/users", "apiV1Users");
+
+  const match = trie.find("/api/v1/users");
+  assertExists(match);
+  assertEquals(match.data, "apiV1Users");
+});
+
+Deno.test("PathTrie - multiple sibling groups under same parent (Group pattern)", () => {
+  const trie = new PathTrie<string>();
+
+  // Simulates two groups under /api
+  trie.insert("/api/v1/users", "v1");
+  trie.insert("/api/v2/posts", "v2");
+
+  assertEquals(trie.find("/api/v1/users")?.data, "v1");
+  assertEquals(trie.find("/api/v2/posts")?.data, "v2");
+  assertEquals(trie.find("/api/v1/posts"), null);
+});
+
+Deno.test("PathTrie - deep nesting registration order stress", () => {
+  const trie = new PathTrie<string>();
+
+  // Different insertion orders that nested Groups might produce
+  trie.insert("/a/b/c/d", "deep");
+  trie.insert("/a/b/c", "shallow"); // ancestor registered later
+  trie.insert("/a/b/e", "sibling");
+
+  assertEquals(trie.find("/a/b/c/d")?.data, "deep");
+  assertEquals(trie.find("/a/b/c")?.data, "shallow");
+  assertEquals(trie.find("/a/b/e")?.data, "sibling");
+});
+
+Deno.test("PathTrie - many groups under common ancestor (simulating heavy Group usage)", () => {
+  const trie = new PathTrie<string>();
+
+  const prefixes = ["/api/v1", "/api/v2", "/api/v3", "/api/v1/admin", "/api/v2/admin"];
+
+  prefixes.forEach((p, i) => {
+    trie.insert(`${p}/resource`, `res-${i}`);
+  });
+
+  assertEquals(trie.find("/api/v1/resource")?.data, "res-0");
+  assertEquals(trie.find("/api/v1/admin/resource")?.data, "res-3");
+  assertEquals(trie.find("/api/v3/resource")?.data, "res-2");
+});

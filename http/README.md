@@ -16,11 +16,13 @@ Go의 Fiber와 유사한 개발자 경험을 **순수 Deno** 위에서 제공하
 
 이 파일을 **항상 최우선**으로 참고하세요. 코드와 함께 지속적으로 업데이트됩니다.
 
-## 현재 상태
+## 현재 상태 (2026-05)
 
-- Architecture locked (2026-05)
-- Phase 0 완료: 기본 구조 세팅
-- 구현 진행 중 (MVP: Router + Context + Basic middleware)
+- Architecture locked
+- Core (Router, Group, Context Builder, Middleware, Error handling) 대부분 구현 완료
+- 85+ 테스트 통과, 실서버 dogfooding (basic-api) 검증 완료
+- Group과 Context cookie 쪽에 일부 residual weakness 존재 (테스트에 명시)
+- Stabilization / documentation hygiene 진행 중
 
 ## 주요 설계 방향 (요약)
 

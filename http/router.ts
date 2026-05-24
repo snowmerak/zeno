@@ -341,6 +341,13 @@ export class Router implements IRouteRegistrar {
 /**
  * RouterGroup - Separate class for groups (does not extend Router).
  * It only shares the IRouteRegistrar interface.
+ *
+ * 설계 이유 (Option A 하에서):
+ * - Router가 trie의 단일 진실 공급원. Group이 독립적인 라우팅 상태를 가지면 복잡도 폭발.
+ * - Route 등록 시점에 middleware를 미리 결합(eager)해서 root에 위임.
+ * - Nested group은 생성 시점에 middleware를 inherited로 capture.
+ * - Custom notFound 등은 prefix 단위로 root에 등록 + lookup.
+ * 이 방식은 runtime을 가볍게 유지하기 위함. (자세한 rationale는 SKILL.md 참조)
  */
 class RouterGroup implements IRouteRegistrar {
   private groupMiddlewares: Middleware[] = [];
