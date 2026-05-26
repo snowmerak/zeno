@@ -16,6 +16,7 @@
 | `@zeno/net`    | TCP/UDP networking library (Go `net`-inspired)   | Fully implemented (TCP & UDP)       |
 | `@zeno/log`    | Structured JSON logger with file rotation        | Fully implemented (Logrus style)    |
 | `@zeno/http-client` | Class-based HTTP client (Go `http.Client` style) | Fully implemented (Interceptors)    |
+| `@zeno/cache`  | In-memory cache with LRU & TTL expiration        | Fully implemented (V8 Map optimized)|
 
 ## Getting Started
 
@@ -23,7 +24,7 @@
 # Run example server
 deno task dev
 
-# Run all tests (including HTTP, TCP, UDP, Logger, and HTTP Client)
+# Run all tests (including HTTP, TCP, UDP, Logger, HTTP Client, and Cache)
 deno task test
 ```
 
@@ -33,7 +34,7 @@ One of the core philosophies of this project:
 
 > **Whenever you add or change a feature, you must also write/update the corresponding agent skill.**
 
-- `skills/http/SKILL.md`, `skills/net/SKILL.md`, `skills/log/SKILL.md`, and `skills/http-client/SKILL.md` are the official design documents.
+- `skills/http/SKILL.md`, `skills/net/SKILL.md`, `skills/log/SKILL.md`, `skills/http-client/SKILL.md`, and `skills/cache/SKILL.md` are the official design documents.
 - Code changes ↔ skill updates must always happen together.
 
 ## Structure
@@ -44,7 +45,8 @@ zeno/
 ├── net/                  # @zeno/net (TCP/UDP Go-inspired networking)
 │   └── http-client/      # @zeno/http-client (Client request suite)
 ├── log/                  # @zeno/log (Logrus-inspired structured JSON logger)
-├── skills/               # Agent skills (http/, net/, log/, http-client/)
+├── cache/                # @zeno/cache (In-memory cache with LRU and TTL)
+├── skills/               # Agent skills (http/, net/, log/, http-client/, cache/)
 ├── examples/             # Library usage examples (self-dogfood)
 ├── tests/                # Core test suites
 ├── scripts/bench/        # Performance benchmarking
