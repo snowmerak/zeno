@@ -34,6 +34,7 @@
  */
 
 import { listenTCP } from "../../net/tcp/listener.ts";
+export { listenTCP };
 import type { TcpListener, TcpConn } from "../../net/tcp/mod.ts";
 import type { TcpListenOptions } from "../../net/tcp/types.ts";
 
