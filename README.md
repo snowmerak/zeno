@@ -12,18 +12,18 @@
 
 | Library        | Description                                      | Status                              |
 |----------------|--------------------------------------------------|-------------------------------------|
-| `@zeno/http`   | Fiber-like HTTP Router (std only)                | Early implementation                |
-| `@zeno/net`    | TCP/UDP networking library (Go `net`-inspired)   | TCP basic implementation in progress |
-
-(Planned: Redis client, HTTP client, etc.)
+| `@zeno/http`   | Fiber-like HTTP Router (std only)                | Production-ready Core               |
+| `@zeno/net`    | TCP/UDP networking library (Go `net`-inspired)   | Fully implemented (TCP & UDP)       |
+| `@zeno/log`    | Structured JSON logger with file rotation        | Fully implemented (Logrus style)    |
+| `@zeno/http-client` | Class-based HTTP client (Go `http.Client` style) | Fully implemented (Interceptors)    |
 
 ## Getting Started
 
 ```bash
-# Run example server (placeholder)
+# Run example server
 deno task dev
 
-# Run tests
+# Run all tests (including HTTP, TCP, UDP, Logger, and HTTP Client)
 deno task test
 ```
 
@@ -33,18 +33,20 @@ One of the core philosophies of this project:
 
 > **Whenever you add or change a feature, you must also write/update the corresponding agent skill.**
 
-- `skills/http/SKILL.md` and `skills/net/SKILL.md` are the official design documents.
+- `skills/http/SKILL.md`, `skills/net/SKILL.md`, `skills/log/SKILL.md`, and `skills/http-client/SKILL.md` are the official design documents.
 - Code changes ↔ skill updates must always happen together.
 
 ## Structure
 
 ```
 zeno/
-├── http/                 # @zeno/http (first library)
-├── net/                  # @zeno/net (TCP/UDP networking)
-├── skills/               # Agent skills (http/, net/, ...)
+├── http/                 # @zeno/http (Fiber-like router)
+├── net/                  # @zeno/net (TCP/UDP Go-inspired networking)
+│   └── http-client/      # @zeno/http-client (Client request suite)
+├── log/                  # @zeno/log (Logrus-inspired structured JSON logger)
+├── skills/               # Agent skills (http/, net/, log/, http-client/)
 ├── examples/             # Library usage examples (self-dogfood)
-├── tests/
+├── tests/                # Core test suites
 ├── scripts/bench/        # Performance benchmarking
 └── deno.json
 ```
