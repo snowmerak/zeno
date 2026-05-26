@@ -21,5 +21,10 @@ export type {
   TcpDialOptions,
 } from "./tcp/mod.ts";
 
-// Future: UDP will be exported here
-// export { listenUDP, dialUDP } from "./udp/mod.ts";
+// UDP exports (Phase 2)
+export { listenUDP, dialUDP } from "./udp/mod.ts";
+export type {
+  UdpConn,
+  UdpListenOptions,
+  UdpDialOptions,
+} from "./udp/mod.ts";

@@ -1,8 +1,8 @@
 # @zeno/net — Agent Skill
 
 **Library**: `@zeno/net` (TCP/UDP networking library for Deno)
-**Status**: Planning phase (2026-05)
-**Version of this skill**: 0.1.0 (initial vision)
+**Status**: TCP & UDP implementation complete (2026-05)
+**Version of this skill**: 0.2.0 (TCP + UDP release)
 
 ---
 
@@ -94,8 +94,8 @@ We can aim for a **similar ergonomic feel** while staying true to Deno's async/s
 **Library Name**: `@zeno/net` (will cover TCP + UDP later)
 
 **Scope Decision**:
-- Start with **TCP only**.
-- UDP will be added in a later phase once Deno's UDP APIs stabilize.
+- TCP implementation complete.
+- UDP implementation complete (requires `--unstable-net` flag).
 
 **Socket Options**:
 - Socket option controls such as `SetNoDelay`, `SetKeepAlive`, `SetKeepAlivePeriod` are explicitly marked as **Out of Scope** because Deno currently does not support them.
@@ -173,27 +173,71 @@ const rawListener: Deno.Listener = listener.unwrap();
 
 ---
 
-## 8. Implementation Progress (as of latest)
+## 8. UDP API Design (Go net style)
 
-**Phase B completed (basic implementation):**
-- `listenTCP(options)` and `TcpListener` wrapper implemented
-- `dialTCP(address, options)` and `TcpConn` wrapper implemented
-- `readLine()` and `writeLine()` convenience methods added to `TcpConn` (bufio-style)
-- Async iterable support on listener
-- `unwrap()` escape hatches for both
-- Basic types defined
+### Function style (similar to Go)
 
-**Phase C in progress:**
-- Test directory structure created (`tests/net/tcp/`)
-- Initial test skeletons for listener and conn
-- Focusing on testing strategy around:
-  - Connection lifecycle
-  - Error handling on closed connections
-  - Async iteration behavior
-  - Escape hatch reliability
+```ts
+// Server (Listen)
+const conn = await listenUDP({ port: 10000 });
 
-**Phase A (SKILL.md refinement):**
-- Will be updated with concrete API decisions and lessons learned from implementation.
+// Client (Dial)
+const conn = await dialUDP("127.0.0.1:10000");
+```
+
+### Class style (UdpConn)
+
+`UdpConn` supports both **connectionless** and **dialed (connected)** paradigms:
+
+#### 1. Connectionless (Server pattern)
+```ts
+const conn = await listenUDP({ port: 10000 });
+
+// Receive packet from any sender
+const buf = new Uint8Array(1024);
+const res = await conn.readFrom(buf);
+if (res) {
+  const { n, addr } = res;
+  console.log(`Received ${n} bytes from ${addr.hostname}:${addr.port}`);
+  
+  // Reply to the sender
+  await conn.writeTo(new TextEncoder().encode("Pong"), addr);
+}
+```
+
+#### 2. Dialed (Client pattern)
+```ts
+const conn = await dialUDP("127.0.0.1:10000");
+
+// Write directly to the pre-configured remote address
+await conn.write(new TextEncoder().encode("Ping"));
+
+// Read packets only from the pre-configured remote address (ignores others)
+const buf = new Uint8Array(1024);
+const n = await conn.read(buf);
+```
+
+#### 3. Streaming (Async Iterator)
+```ts
+const conn = await listenUDP({ port: 10000 });
+for await (const [data, addr] of conn) {
+  console.log(`Packet received from ${addr.hostname}:`, data);
+}
+```
+
+### Escape Hatch
+```ts
+const rawDatagramConn: Deno.DatagramConn = conn.unwrap();
+```
+
+---
+
+## 9. Implementation Progress (as of latest)
+
+**Phase B & C completed (TCP + UDP implementation & validation):**
+- **TCP**: `listenTCP`/`dialTCP` wrappers, connection buffering, `readLine`/`writeLine` bufio-style convenience helpers, robust integration tests.
+- **UDP**: `listenUDP`/`dialUDP` wrappers wrapping Deno's unstable `Deno.listenDatagram` API. Implements connectionless (`readFrom`/`writeTo`) and simulated connected/dialed (`read`/`write` with address filtering) patterns. Full suite of integration tests covering dual-mode behavior.
+- Deno configuration updated to automatically apply `--unstable-net` for test compilation and execution.
 
 
 ---
