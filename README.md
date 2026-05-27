@@ -18,6 +18,7 @@
 | `@zeno/http-client` | Class-based HTTP client (Go `http.Client` style) | Fully implemented (Interceptors)    |
 | `@zeno/cache`  | In-memory cache with LRU & TTL expiration        | Fully implemented (V8 Map optimized)|
 | `@zeno/codec`  | Binary serialization & TCP packet framing        | Fully implemented (Varint, ZigZag)  |
+| `@zeno/db`     | In-process Log-Structured KV Database Engine      | Fully implemented (Bitcask style)   |
 
 ## Getting Started
 
@@ -25,7 +26,7 @@
 # Run example server
 deno task dev
 
-# Run all tests (including HTTP, TCP, UDP, Logger, HTTP Client, Cache, and Codec)
+# Run all tests (including HTTP, TCP, UDP, Logger, HTTP Client, Cache, Codec, and DB)
 deno task test
 ```
 
@@ -35,7 +36,7 @@ One of the core philosophies of this project:
 
 > **Whenever you add or change a feature, you must also write/update the corresponding agent skill.**
 
-- `skills/http/SKILL.md`, `skills/net/SKILL.md`, `skills/log/SKILL.md`, `skills/http-client/SKILL.md`, `skills/cache/SKILL.md`, and `skills/codec/SKILL.md` are the official design documents.
+- `skills/http/SKILL.md`, `skills/net/SKILL.md`, `skills/log/SKILL.md`, `skills/http-client/SKILL.md`, `skills/cache/SKILL.md`, `skills/codec/SKILL.md`, and `skills/db/SKILL.md` are the official design documents.
 - Code changes ↔ skill updates must always happen together.
 
 ## Structure
@@ -48,7 +49,8 @@ zeno/
 ├── log/                  # @zeno/log (Logrus-inspired structured JSON logger)
 ├── cache/                # @zeno/cache (In-memory cache with LRU and TTL)
 ├── codec/                # @zeno/codec (Varint serialization & TCP packet framing)
-├── skills/               # Agent skills (http/, net/, log/, http-client/, cache/, codec/)
+├── db/                   # @zeno/db (Log-structured Bitcask-like database engine)
+├── skills/               # Agent skills (http/, net/, log/, http-client/, cache/, codec/, db/)
 ├── examples/             # Library usage examples (self-dogfood)
 ├── tests/                # Core test suites
 ├── scripts/bench/        # Performance benchmarking
