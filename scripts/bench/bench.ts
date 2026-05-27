@@ -12,6 +12,7 @@ import { Logger, LogLevel, LogWriter } from "../../log/mod.ts";
 import { PathTrie } from "../../http/trie.ts";
 import { encodeUvarint, decodeUvarint, defineSchema } from "../../codec/mod.ts";
 import { BitcaskStore } from "../../db/mod.ts";
+import { BufReader, BufWriter, Reader, Writer } from "../../bufio/mod.ts";
 
 // === 1. @zeno/cache Benchmark Setup ===
 const cache = new InMemoryCacheStore<number>({ maxSize: 1000, sweepInterval: 0 });
@@ -116,3 +117,56 @@ Deno.bench("DB - Teardown / Close DB", async () => {
     await Deno.remove(dbPath, { recursive: true });
   } catch (_) {}
 });
+
+// === 6. @zeno/bufio Benchmark Setup ===
+
+class ChunkReader implements Reader {
+  private offset = 0;
+  constructor(private data: Uint8Array) {}
+  async read(p: Uint8Array): Promise<number | null> {
+    if (this.offset >= this.data.length) return null;
+    const n = Math.min(p.length, this.data.length - this.offset);
+    p.set(this.data.subarray(this.offset, this.offset + n));
+    this.offset += n;
+    return n;
+  }
+}
+
+class ChunkWriter implements Writer {
+  public bytes: number[] = [];
+  async write(p: Uint8Array): Promise<number> {
+    for (let i = 0; i < p.length; i++) {
+      this.bytes.push(p[i]);
+    }
+    return p.length;
+  }
+}
+
+const lineData = new TextEncoder().encode("line1\nline2\nline3\nline4\nline5\n".repeat(100));
+
+Deno.bench("Bufio - BufReader readLine (500 lines)", async () => {
+  const rd = new ChunkReader(lineData);
+  const reader = new BufReader(rd, 1024);
+  while (true) {
+    const res = await reader.readLine();
+    if (!res) break;
+  }
+});
+
+Deno.bench("Bufio - BufWriter writeByte (1000 writes, buffered)", async () => {
+  const wr = new ChunkWriter();
+  const writer = new BufWriter(wr, 1024);
+  for (let i = 0; i < 1000; i++) {
+    await writer.writeByte(65);
+  }
+  await writer.flush();
+});
+
+Deno.bench("Bufio - Direct mock write (1000 writes, unbuffered)", async () => {
+  const wr = new ChunkWriter();
+  const single = new Uint8Array([65]);
+  for (let i = 0; i < 1000; i++) {
+    await wr.write(single);
+  }
+});
+
