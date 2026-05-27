@@ -173,3 +173,124 @@ Deno.test("BufWriter - large writes bypass buffer copies", async () => {
   assertEquals(mock.bytes.length, 6);
   assertEquals(mock.bytes, [10, 20, 30, 40, 50, 60]);
 });
+
+Deno.test("BufReader - invalid buffer size throws RangeError", () => {
+  const mock = new MockReader(new Uint8Array(0));
+  try {
+    new BufReader(mock, 0);
+    throw new Error("Expected failure");
+  } catch (e) {
+    assertEquals(e instanceof RangeError, true);
+  }
+  try {
+    new BufReader(mock, -5);
+    throw new Error("Expected failure");
+  } catch (e) {
+    assertEquals(e instanceof RangeError, true);
+  }
+});
+
+Deno.test("BufReader - empty reader and EOF behaviors", async () => {
+  const mock = new MockReader(new Uint8Array(0));
+  const reader = new BufReader(mock, 16);
+
+  const p = new Uint8Array(5);
+  const n = await reader.read(p);
+  assertEquals(n, null);
+
+  const b = await reader.readByte();
+  assertEquals(b, null);
+
+  const l = await reader.readLine();
+  assertEquals(l, null);
+});
+
+Deno.test("BufReader - propagation of underlying reader errors", async () => {
+  class ErrorReader implements Reader {
+    async read(_p: Uint8Array): Promise<number | null> {
+      throw new Error("Underlying read failure");
+    }
+  }
+
+  const mock = new ErrorReader();
+  const reader = new BufReader(mock, 16);
+
+  try {
+    await reader.readByte();
+    throw new Error("Expected error");
+  } catch (e) {
+    assertEquals((e as Error).message, "Underlying read failure");
+  }
+
+  // Error is cached/propagated persistently on subsequent reads
+  try {
+    const p = new Uint8Array(5);
+    await reader.read(p);
+    throw new Error("Expected cached error");
+  } catch (e) {
+    assertEquals((e as Error).message, "Underlying read failure");
+  }
+});
+
+Deno.test("BufWriter - invalid buffer size throws RangeError", () => {
+  const mock = new MockWriter();
+  try {
+    new BufWriter(mock, 0);
+    throw new Error("Expected failure");
+  } catch (e) {
+    assertEquals(e instanceof RangeError, true);
+  }
+  try {
+    new BufWriter(mock, -10);
+    throw new Error("Expected failure");
+  } catch (e) {
+    assertEquals(e instanceof RangeError, true);
+  }
+});
+
+Deno.test("BufWriter - propagates errors and throws on short writes", async () => {
+  class ErrorWriter implements Writer {
+    async write(_p: Uint8Array): Promise<number> {
+      throw new Error("Underlying write failure");
+    }
+  }
+
+  const mock = new ErrorWriter();
+  const writer = new BufWriter(mock, 8);
+
+  await writer.write(new Uint8Array([1, 2, 3]));
+  try {
+    await writer.flush();
+    throw new Error("Expected error");
+  } catch (e) {
+    assertEquals((e as Error).message, "Underlying write failure");
+  }
+
+  // Write after error should persistently throw the error
+  try {
+    await writer.write(new Uint8Array([4]));
+    throw new Error("Expected cached error");
+  } catch (e) {
+    assertEquals((e as Error).message, "Underlying write failure");
+  }
+});
+
+Deno.test("BufWriter - throws on short writes (0 bytes)", async () => {
+  class ZeroWriter implements Writer {
+    async write(_p: Uint8Array): Promise<number> {
+      return 0;
+    }
+  }
+
+  const mock = new ZeroWriter();
+  const writer = new BufWriter(mock, 8);
+
+  await writer.write(new Uint8Array([1, 2, 3]));
+  try {
+    await writer.flush();
+    throw new Error("Expected short write error");
+  } catch (e) {
+    assertEquals((e as Error).message, "Short write: underlying writer accepted 0 bytes");
+  }
+});
+
