@@ -17,6 +17,7 @@
 | `@zeno/log`    | Structured JSON logger with file rotation        | Fully implemented (Logrus style)    |
 | `@zeno/http-client` | Class-based HTTP client (Go `http.Client` style) | Fully implemented (Interceptors)    |
 | `@zeno/cache`  | In-memory cache with LRU & TTL expiration        | Fully implemented (V8 Map optimized)|
+| `@zeno/codec`  | Binary serialization & TCP packet framing        | Fully implemented (Varint, ZigZag)  |
 
 ## Getting Started
 
@@ -24,7 +25,7 @@
 # Run example server
 deno task dev
 
-# Run all tests (including HTTP, TCP, UDP, Logger, HTTP Client, and Cache)
+# Run all tests (including HTTP, TCP, UDP, Logger, HTTP Client, Cache, and Codec)
 deno task test
 ```
 
@@ -34,7 +35,7 @@ One of the core philosophies of this project:
 
 > **Whenever you add or change a feature, you must also write/update the corresponding agent skill.**
 
-- `skills/http/SKILL.md`, `skills/net/SKILL.md`, `skills/log/SKILL.md`, `skills/http-client/SKILL.md`, and `skills/cache/SKILL.md` are the official design documents.
+- `skills/http/SKILL.md`, `skills/net/SKILL.md`, `skills/log/SKILL.md`, `skills/http-client/SKILL.md`, `skills/cache/SKILL.md`, and `skills/codec/SKILL.md` are the official design documents.
 - Code changes ↔ skill updates must always happen together.
 
 ## Structure
@@ -46,7 +47,8 @@ zeno/
 │   └── http-client/      # @zeno/http-client (Client request suite)
 ├── log/                  # @zeno/log (Logrus-inspired structured JSON logger)
 ├── cache/                # @zeno/cache (In-memory cache with LRU and TTL)
-├── skills/               # Agent skills (http/, net/, log/, http-client/, cache/)
+├── codec/                # @zeno/codec (Varint serialization & TCP packet framing)
+├── skills/               # Agent skills (http/, net/, log/, http-client/, cache/, codec/)
 ├── examples/             # Library usage examples (self-dogfood)
 ├── tests/                # Core test suites
 ├── scripts/bench/        # Performance benchmarking
