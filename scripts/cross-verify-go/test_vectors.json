@@ -10,5 +10,21 @@
   "blake3KeyedMacHex": "7bd2f16505cf680f55ddd8e01e44b755281184973bd2a6644983fa7f443c15b3",
   "blake3Context": "Zeno Cross Verification Context",
   "blake3Ikm": "Input Key Material",
-  "blake3DerivedKeyHex": "282d11feea1cd2bc15c45f1a7133cbf63e0fe4d7507a26e338af5b260ca82e28"
+  "blake3DerivedKeyHex": "282d11feea1cd2bc15c45f1a7133cbf63e0fe4d7507a26e338af5b260ca82e28",
+  "sha2Input": "Hello, SHA-2! Cross-verification.",
+  "sha256HashHex": "9dd9f3f4c07009b07ed065f5a6bad27161a71771e8a32b3a1a1047d9a787766d",
+  "sha512HashHex": "a75fc319d21ee43c31a90879a2bb05ba01e541283765d1fe9e7e3b2856b100ad0ecaa7a09243ef6ec8c3e53c7cec1dd510c9689acb592e9d16e76f3f45bc0bc5",
+  "aesGcmKeyHex": "0a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20212223242526272829",
+  "aesGcmIvHex": "1415161718191a1b1c1d1e1f",
+  "aesGcmPlaintext": "Secret message for AES-GCM cross-verification.",
+  "aesGcmCiphertextHex": "efd283715e85fcc5e82ba7b3b5fabdbd6f1b9ed44f2aae701f70d8296069e2f8abecb257361fcf3f42e72c229175a080adde98a9159a83b84ce1d55a3949",
+  "aesGcmAadHex": "47434d204141442064617461",
+  "aesCbcKeyHex": "1e1f202122232425262728292a2b2c2d",
+  "aesCbcIvHex": "28292a2b2c2d2e2f3031323334353637",
+  "aesCbcPlaintext": "Secret message for AES-CBC cross-verification.",
+  "aesCbcCiphertextHex": "4da414e0e90e43f39bd711f930b200c74b6e2347c4e4fc00b63458e36ca2311fbfd513ef72ae32041d4dd53301a69cd6",
+  "sha3Input": "abc",
+  "sha3_256HashHex": "3a985da74fe225b2045c172d6bd390bd855f086e3e9d525b46bfe24511431532",
+  "sha3_512HashHex": "b751850b1a57168a5693cd924b6b096e08f621827444f70d884f5d0240d2712e10e116e9192af3c91a7ec57647e3934057340b4cf408d5a56592f8274eec53f0",
+  "keccak256HashHex": "4e03657aea45a94fc7d47ba826c8d667c0d1e6e33a64a036ec44f58fa12d6c45"
 }

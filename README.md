@@ -20,7 +20,7 @@
 | `@zeno/codec`  | Binary serialization & TCP packet framing        | Fully implemented (Varint, ZigZag)  |
 | `@zeno/db`     | In-process Log-Structured KV Database Engine      | Fully implemented (Bitcask style)   |
 | `@zeno/bufio`  | Go-inspired high-performance buffered I/O library | Fully implemented (Zero-dependency) |
-| `@zeno/crypto` | Zero-dependency BLAKE3 and XChaCha20-Poly1305 AEAD | Fully implemented (Natively vendored) |
+| `@zeno/crypto` | Zero-dependency AES, SHA-2, SHA-3/Keccak, BLAKE3, and XChaCha20-Poly1305 AEAD | Fully implemented (Natively vendored) |
 
 
 ## Getting Started
@@ -54,7 +54,7 @@ zeno/
 ├── codec/                # @zeno/codec (Varint serialization & TCP packet framing)
 ├── db/                   # @zeno/db (Log-structured Bitcask-like database engine)
 ├── bufio/                # @zeno/bufio (Go-inspired high-performance buffered I/O)
-├── crypto/               # @zeno/crypto (Zero-dependency BLAKE3 and XChaCha20-Poly1305 AEAD)
+├── crypto/               # @zeno/crypto (Zero-dependency AES, SHA-2, SHA-3/Keccak, BLAKE3, and XChaCha20-Poly1305 AEAD)
 ├── skills/               # Agent skills (http/, net/, log/, http-client/, cache/, codec/, db/, bufio/, crypto/)
 ├── examples/             # Library usage examples (self-dogfood)
 ├── tests/                # Core test suites

@@ -1,10 +1,24 @@
-import { assertEquals, assertExists, assertThrows } from "@std/assert";
+import { assertEquals, assertExists, assertThrows, assertRejects } from "@std/assert";
 import { 
   blake3, 
   blake3Hex, 
   encryptXChaCha20Poly1305, 
   decryptXChaCha20Poly1305, 
-  deriveKeyFromPassphrase 
+  deriveKeyFromPassphrase,
+  sha256,
+  sha256Hex,
+  sha512,
+  sha512Hex,
+  encryptAESGCM,
+  decryptAESGCM,
+  encryptAESCBC,
+  decryptAESCBC,
+  sha3_256,
+  sha3_256Hex,
+  sha3_512,
+  sha3_512Hex,
+  keccak_256,
+  keccak_256Hex
 } from "../../crypto/mod.ts";
 
 // --- BLAKE3 Hashing Tests ---
@@ -137,4 +151,92 @@ Deno.test("KDF - deriveKeyFromPassphrase roundtrip", async () => {
   const differentSalt = crypto.getRandomValues(new Uint8Array(16));
   const differentKeyWithSalt = await deriveKeyFromPassphrase(password, differentSalt, 1000);
   assertEquals(key1.toString() !== differentKeyWithSalt.toString(), true);
+});
+
+// --- SHA-2 Hashing Tests ---
+
+Deno.test("SHA-2 - standard hashing and hex encoding", async () => {
+  const data = new TextEncoder().encode("Hello, Zeno!");
+  const hash256 = await sha256(data);
+  assertEquals(hash256.length, 32);
+  
+  const hash256Hex = await sha256Hex(data);
+  assertEquals(hash256Hex, "6860f043363ddc587fb834c80fedbbfe7aaeb17fc2d9d5ebd2cf627bc4ce2497");
+
+  const hash512 = await sha512(data);
+  assertEquals(hash512.length, 64);
+
+  const hash512Hex = await sha512Hex(data);
+  assertEquals(hash512Hex, "5a030beadeac8a38a4946f507cd42cca457cd4ba65c05497ba19cabe732842b400d2b7a3af8b8db06b9f1f85fe3d750728cadca86108e519a127a3d214933eb1");
+});
+
+// --- AES Encryption Tests ---
+
+Deno.test("AES-GCM - basic encrypt/decrypt roundtrip", async () => {
+  const plaintext = new TextEncoder().encode("AES-GCM high speed hardware payload");
+  const key = crypto.getRandomValues(new Uint8Array(32)); // 256-bit key
+  const associatedData = new TextEncoder().encode("AAD Metadata");
+
+  // Encrypt
+  const { ciphertext, iv } = await encryptAESGCM(plaintext, key, undefined, associatedData);
+  assertExists(ciphertext);
+  assertEquals(iv.length, 12);
+
+  // Decrypt
+  const decrypted = await decryptAESGCM(ciphertext, key, iv, associatedData);
+  assertEquals(new TextDecoder().decode(decrypted), "AES-GCM high speed hardware payload");
+
+  // Decrypt with wrong AAD rejects
+  const wrongAAD = new TextEncoder().encode("Wrong AAD");
+  await assertRejects(() => decryptAESGCM(ciphertext, key, iv, wrongAAD));
+
+  // Tampering with ciphertext rejects
+  const tampered = new Uint8Array(ciphertext);
+  tampered[0] ^= 0x01;
+  await assertRejects(() => decryptAESGCM(tampered, key, iv, associatedData));
+
+  // Invalid key size rejects
+  const badKey = new Uint8Array(15);
+  await assertRejects(() => encryptAESGCM(plaintext, badKey));
+});
+
+Deno.test("AES-CBC - basic encrypt/decrypt roundtrip", async () => {
+  const plaintext = new TextEncoder().encode("AES-CBC PKCS7 padded payload");
+  const key = crypto.getRandomValues(new Uint8Array(16)); // 128-bit key
+
+  // Encrypt
+  const { ciphertext, iv } = await encryptAESCBC(plaintext, key);
+  assertExists(ciphertext);
+  assertEquals(iv.length, 16);
+
+  // Decrypt
+  const decrypted = await decryptAESCBC(ciphertext, key, iv);
+  assertEquals(new TextDecoder().decode(decrypted), "AES-CBC PKCS7 padded payload");
+
+  // Tampering with IV rejects / corrupts first block
+  const badIv = new Uint8Array(iv);
+  badIv[0] ^= 0x01;
+  const decryptedBad = await decryptAESCBC(ciphertext, key, badIv);
+  assertEquals(decryptedBad.toString() !== plaintext.toString(), true);
+});
+
+// --- SHA-3 / Keccak Hashing Tests ---
+
+Deno.test("SHA-3 - standard NIST and Keccak-256 validation", () => {
+  const data = new TextEncoder().encode("abc");
+
+  // NIST SHA3-256
+  const hash3_256 = sha3_256(data);
+  assertEquals(hash3_256.length, 32);
+  assertEquals(sha3_256Hex(data), "3a985da74fe225b2045c172d6bd390bd855f086e3e9d525b46bfe24511431532");
+
+  // NIST SHA3-512
+  const hash3_512 = sha3_512(data);
+  assertEquals(hash3_512.length, 64);
+  assertEquals(sha3_512Hex(data), "b751850b1a57168a5693cd924b6b096e08f621827444f70d884f5d0240d2712e10e116e9192af3c91a7ec57647e3934057340b4cf408d5a56592f8274eec53f0");
+
+  // Keccak-256 (Ethereum standard)
+  const keccak256 = keccak_256(data);
+  assertEquals(keccak256.length, 32);
+  assertEquals(keccak_256Hex(data), "4e03657aea45a94fc7d47ba826c8d667c0d1e6e33a64a036ec44f58fa12d6c45");
 });

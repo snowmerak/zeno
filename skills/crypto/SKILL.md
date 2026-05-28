@@ -4,22 +4,26 @@ This skill provides design instructions, cryptographic boundaries, and API conve
 
 ## Architectural Boundaries
 
-1. **Zero External Dependencies**: All cryptographic engines (BLAKE3, XChaCha20, Poly1305) are implemented in pure TypeScript and hosted locally under `@zeno/crypto/noble` to prevent supply chain injection vectors.
-2. **WebCrypto Key Derivation**: High-level key derivation utilizing PBKDF2 integrates natively with standard WebCrypto APIs to maintain extreme performance and safety bounds.
-3. **Safety of Nonces**: Nonces for XChaCha20-Poly1305 must be exactly **24 bytes** (192-bits) in length. Because of the extended nonce size, it is safe to generate nonces using `crypto.getRandomValues(new Uint8Array(24))` without risk of collision under the same key.
+1. **Zero External Dependencies**: All core local cryptographic modules (BLAKE3, XChaCha20, Poly1305, SHA-3/Keccak) are implemented locally with zero external npm/jsr dependencies to prevent supply chain injection vectors.
+2. **Native WebCrypto Acceleration**: High-performance primitives (SHA-2, AES-GCM, AES-CBC, and PBKDF2) utilize Deno's native `crypto.subtle` APIs to benefit from hardware-accelerated instructions (AES-NI) and strict constant-time side-channel resistance.
+3. **Safety of Nonces & IVs**:
+   * **XChaCha20-Poly1305**: Nonces must be exactly **24 bytes** (192-bits). Due to the extended nonce, random generation using `crypto.getRandomValues(new Uint8Array(24))` is 100% collision-safe.
+   * **AES-GCM**: IVs must be exactly **12 bytes** (96-bits). Always use randomly generated CSPRNG IVs via `crypto.getRandomValues(new Uint8Array(12))`. Do not reuse IVs under the same key.
+   * **AES-CBC**: IVs must be exactly **16 bytes** (128-bits) and generated using standard random CSPRNG arrays.
 
 ---
 
 ## Technical Recommendations
 
-### 1. Hashing Modes (BLAKE3)
-* **Standard Hashing**: Pass bytes directly to `blake3(data)`.
-* **Keyed MAC (Message Authentication Code)**: Always use a cryptographically strong 32-byte key: `blake3(data, { key })`. Never reuse MAC keys for other purposes.
-* **Context-Bound KDF**: Context must be globally unique context bytes: `blake3(data, { context })`. A good contextual format is `"application commit-timestamp purpose"`.
+### 1. Hashing Modes (BLAKE3 vs SHA-2 vs SHA-3)
+* **BLAKE3**: Preferred for high-performance hashing, message authentication (keyed MAC), and key derivation (context-bound KDF).
+* **SHA-2**: Native WebCrypto-backed `sha256Hex` / `sha512Hex` are preferred for hardware-accelerated performance and legacy standard compatibility.
+* **SHA-3 / Keccak**: Use `sha3_256Hex` / `sha3_512Hex` for FIPS-202 compliant SHA-3, and `keccak_256Hex` for Ethereum/Web3-compliant hashing.
 
-### 2. Encryption Modes (XChaCha20-Poly1305 AEAD)
-* **Associated Data (AAD)**: When encrypting databases, files, or network streams, always pass structural context (e.g. record ID, sender ID, timestamp) to the `associatedData` options block. This binds the ciphertext to its logical context and prevents ciphertext substitution or replay attacks.
-* **Poly1305 Tag Validation**: The 16-byte Poly1305 authentication tag is automatically appended to the end of the ciphertext bytes on `encryptXChaCha20Poly1305`. It is verified dynamically and automatically upon calling `decryptXChaCha20Poly1305`. Mismatching tags will immediately throw an `Error("invalid tag")`.
+### 2. Encryption Modes (AES vs XChaCha20-Poly1305)
+* **XChaCha20-Poly1305**: Preferred for random-nonce AEAD safety, zero-dependency pure TypeScript guarantees, and high performance on devices without AES-NI.
+* **AES-GCM**: Industry-standard AEAD. Requires exact 12-byte IVs. Always verify matching Associated Data (AAD) for complete integrity.
+* **AES-CBC**: Legacy compatibility. Automatically utilizes PKCS7 padding under the hood. Avoid using when authenticated encryption (AEAD) is possible.
 
 ---
 
@@ -29,21 +33,25 @@ This skill provides design instructions, cryptographic boundaries, and API conve
 import { 
   blake3Hex, 
   encryptXChaCha20Poly1305, 
-  decryptXChaCha20Poly1305 
+  decryptXChaCha20Poly1305,
+  encryptAESGCM,
+  decryptAESGCM,
+  sha3_256Hex
 } from "@zeno/crypto";
 
-// Hash computation
-const digest = blake3Hex(new TextEncoder().encode("data"));
+// Hash computation (SHA-3)
+const sha3Digest = sha3_256Hex(new TextEncoder().encode("data"));
 
-// Secure encryption
-const key = crypto.getRandomValues(new Uint8Array(32));
-const aad = new TextEncoder().encode("db-record-id-1234");
-const { ciphertext, nonce } = encryptXChaCha20Poly1305(
-  new TextEncoder().encode("value"), 
-  key, 
-  { associatedData: aad }
+// Secure AES-GCM encryption
+const aesKey = crypto.getRandomValues(new Uint8Array(32));
+const aad = new TextEncoder().encode("metadata-context");
+const { ciphertext, iv } = await encryptAESGCM(
+  new TextEncoder().encode("secure payload"), 
+  aesKey, 
+  undefined,
+  aad
 );
 
-// Secure decryption
-const decrypted = decryptXChaCha20Poly1305(ciphertext, key, nonce, { associatedData: aad });
+// Decryption
+const decrypted = await decryptAESGCM(ciphertext, aesKey, iv, aad);
 ```

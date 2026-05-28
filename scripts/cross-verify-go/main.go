@@ -1,7 +1,12 @@
 package main
 
 import (
+	"bytes"
+	"crypto/aes"
+	"crypto/cipher"
 	"crypto/rand"
+	"crypto/sha256"
+	"crypto/sha512"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -10,6 +15,7 @@ import (
 
 	"github.com/zeebo/blake3"
 	"golang.org/x/crypto/chacha20poly1305"
+	"golang.org/x/crypto/sha3"
 )
 
 type TestVectors struct {
@@ -28,6 +34,32 @@ type TestVectors struct {
 	Blake3Context         string `json:"blake3Context"`
 	Blake3Ikm             string `json:"blake3Ikm"`
 	Blake3DerivedKeyHex   string `json:"blake3DerivedKeyHex"`
+
+	Sha2Input             string `json:"sha2Input"`
+	Sha256HashHex         string `json:"sha256HashHex"`
+	Sha512HashHex         string `json:"sha512HashHex"`
+
+	AesGcmKeyHex          string `json:"aesGcmKeyHex"`
+	AesGcmIvHex           string `json:"aesGcmIvHex"`
+	AesGcmPlaintext       string `json:"aesGcmPlaintext"`
+	AesGcmCiphertextHex   string `json:"aesGcmCiphertextHex"`
+	AesGcmAadHex          string `json:"aesGcmAadHex"`
+
+	AesCbcKeyHex          string `json:"aesCbcKeyHex"`
+	AesCbcIvHex           string `json:"aesCbcIvHex"`
+	AesCbcPlaintext       string `json:"aesCbcPlaintext"`
+	AesCbcCiphertextHex   string `json:"aesCbcCiphertextHex"`
+
+	Sha3Input             string `json:"sha3Input"`
+	Sha3_256HashHex       string `json:"sha3_256HashHex"`
+	Sha3_512HashHex       string `json:"sha3_512HashHex"`
+	Keccak256HashHex      string `json:"keccak256HashHex"`
+}
+
+func pkcs7Pad(data []byte, blockSize int) []byte {
+	padding := blockSize - (len(data) % blockSize)
+	padText := bytes.Repeat([]byte{byte(padding)}, padding)
+	return append(data, padText...)
 }
 
 func main() {
@@ -76,11 +108,74 @@ func main() {
 	blake3Context := "Zeno Cross Verification Context"
 	blake3Ikm := "Input Key Material"
 	
-	// Zeebo/blake3 DeriveKey takes context string, input key material, and output buffer
 	derivedKey := make([]byte, 32)
 	blake3.DeriveKey(blake3Context, []byte(blake3Ikm), derivedKey)
+
+	// 6. Perform SHA-2 Hashing
+	sha2Input := "Hello, SHA-2! Cross-verification."
+	sha256Hasher := sha256.New()
+	sha256Hasher.Write([]byte(sha2Input))
+	sha256Hash := sha256Hasher.Sum(nil)
+
+	sha512Hasher := sha512.New()
+	sha512Hasher.Write([]byte(sha2Input))
+	sha512Hash := sha512Hasher.Sum(nil)
+
+	// 7. Perform AES-GCM Encryption
+	aesGcmPlaintext := "Secret message for AES-GCM cross-verification."
+	aesGcmAad := "GCM AAD data"
+	aesGcmKey := make([]byte, 32) // AES-256
+	for i := range aesGcmKey {
+		aesGcmKey[i] = byte(i + 10)
+	}
+	aesGcmIv := make([]byte, 12)
+	for i := range aesGcmIv {
+		aesGcmIv[i] = byte(i + 20)
+	}
+	aesBlockGcm, err := aes.NewCipher(aesGcmKey)
+	if err != nil {
+		log.Fatalf("failed to create AES cipher: %v", err)
+	}
+	aesGcmInstance, err := cipher.NewGCM(aesBlockGcm)
+	if err != nil {
+		log.Fatalf("failed to create GCM: %v", err)
+	}
+	aesGcmCiphertext := aesGcmInstance.Seal(nil, aesGcmIv, []byte(aesGcmPlaintext), []byte(aesGcmAad))
+
+	// 8. Perform AES-CBC Encryption
+	aesCbcPlaintext := "Secret message for AES-CBC cross-verification."
+	aesCbcKey := make([]byte, 16) // AES-128
+	for i := range aesCbcKey {
+		aesCbcKey[i] = byte(i + 30)
+	}
+	aesCbcIv := make([]byte, 16)
+	for i := range aesCbcIv {
+		aesCbcIv[i] = byte(i + 40)
+	}
+	aesBlockCbc, err := aes.NewCipher(aesCbcKey)
+	if err != nil {
+		log.Fatalf("failed to create AES block cipher: %v", err)
+	}
+	aesCbcPlaintextPadded := pkcs7Pad([]byte(aesCbcPlaintext), aes.BlockSize)
+	aesCbcCiphertext := make([]byte, len(aesCbcPlaintextPadded))
+	cbcEncrypter := cipher.NewCBCEncrypter(aesBlockCbc, aesCbcIv)
+	cbcEncrypter.CryptBlocks(aesCbcCiphertext, aesCbcPlaintextPadded)
+
+	// 9. Perform SHA-3 / Keccak Hashing
+	sha3Input := "abc"
+	sha3_256Hasher := sha3.New256()
+	sha3_256Hasher.Write([]byte(sha3Input))
+	sha3_256Hash := sha3_256Hasher.Sum(nil)
+
+	sha3_512Hasher := sha3.New512()
+	sha3_512Hasher.Write([]byte(sha3Input))
+	sha3_512Hash := sha3_512Hasher.Sum(nil)
+
+	keccak256Hasher := sha3.NewLegacyKeccak256()
+	keccak256Hasher.Write([]byte(sha3Input))
+	keccak256Hash := keccak256Hasher.Sum(nil)
 	
-	// 6. Build and write JSON
+	// 10. Build and write JSON
 	vectors := TestVectors{
 		Plaintext:            plaintext,
 		KeyHex:               hex.EncodeToString(key),
@@ -97,6 +192,26 @@ func main() {
 		Blake3Context:       blake3Context,
 		Blake3Ikm:           blake3Ikm,
 		Blake3DerivedKeyHex: hex.EncodeToString(derivedKey),
+
+		Sha2Input:           sha2Input,
+		Sha256HashHex:       hex.EncodeToString(sha256Hash),
+		Sha512HashHex:       hex.EncodeToString(sha512Hash),
+
+		AesGcmKeyHex:        hex.EncodeToString(aesGcmKey),
+		AesGcmIvHex:         hex.EncodeToString(aesGcmIv),
+		AesGcmPlaintext:     aesGcmPlaintext,
+		AesGcmCiphertextHex: hex.EncodeToString(aesGcmCiphertext),
+		AesGcmAadHex:        hex.EncodeToString([]byte(aesGcmAad)),
+
+		AesCbcKeyHex:        hex.EncodeToString(aesCbcKey),
+		AesCbcIvHex:         hex.EncodeToString(aesCbcIv),
+		AesCbcPlaintext:     aesCbcPlaintext,
+		AesCbcCiphertextHex: hex.EncodeToString(aesCbcCiphertext),
+
+		Sha3Input:           sha3Input,
+		Sha3_256HashHex:     hex.EncodeToString(sha3_256Hash),
+		Sha3_512HashHex:     hex.EncodeToString(sha3_512Hash),
+		Keccak256HashHex:    hex.EncodeToString(keccak256Hash),
 	}
 	
 	fileData, err := json.MarshalIndent(vectors, "", "  ")
