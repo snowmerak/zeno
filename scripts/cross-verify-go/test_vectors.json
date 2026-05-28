@@ -1,0 +1,14 @@
+{
+  "plaintext": "Top-secret message for Go and Deno interoperability.",
+  "keyHex": "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20",
+  "nonceHex": "101112131415161718191a1b1c1d1e1f2021222324252627",
+  "associatedDataHex": "4173736f636961746564206d65746164617461",
+  "xchachaCiphertextHex": "5c22094f781a907d437d20f8729b2a1a066ed74319244d4e18c2472310d1cb45f111e74ef80d3eb7d712984a28f2a465b31d86b11af92d3d3697fd98c47aac38cc28d487",
+  "blake3Input": "Hello, Zeno! Cross-verification test.",
+  "blake3HashHex": "59082c1bfe65092aa49a5d9276001f4e1104ff03e658d5366919d336c28f5fb1",
+  "blake3KeyHex": "05060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f2021222324",
+  "blake3KeyedMacHex": "7bd2f16505cf680f55ddd8e01e44b755281184973bd2a6644983fa7f443c15b3",
+  "blake3Context": "Zeno Cross Verification Context",
+  "blake3Ikm": "Input Key Material",
+  "blake3DerivedKeyHex": "282d11feea1cd2bc15c45f1a7133cbf63e0fe4d7507a26e338af5b260ca82e28"
+}
