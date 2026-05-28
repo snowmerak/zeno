@@ -13,6 +13,7 @@ import { PathTrie } from "../../http/trie.ts";
 import { encodeUvarint, decodeUvarint, defineSchema } from "../../codec/mod.ts";
 import { BitcaskStore } from "../../db/mod.ts";
 import { BufReader, BufWriter, Reader, Writer } from "../../bufio/mod.ts";
+import { blake3, encryptXChaCha20Poly1305, decryptXChaCha20Poly1305 } from "../../crypto/mod.ts";
 
 // === 1. @zeno/cache Benchmark Setup ===
 const cache = new InMemoryCacheStore<number>({ maxSize: 1000, sweepInterval: 0 });
@@ -168,5 +169,22 @@ Deno.bench("Bufio - Direct mock write (1000 writes, unbuffered)", async () => {
   for (let i = 0; i < 1000; i++) {
     await wr.write(single);
   }
+});
+
+// === 7. @zeno/crypto Benchmark Setup ===
+const cryptoKey = crypto.getRandomValues(new Uint8Array(32));
+const cryptoPayload = new TextEncoder().encode("Hello, Zeno! Secure cryptography pipeline.");
+const { ciphertext: cryptoCiphertext, nonce: cryptoNonce } = encryptXChaCha20Poly1305(cryptoPayload, cryptoKey);
+
+Deno.bench("Crypto - BLAKE3 hash (32 bytes input)", () => {
+  blake3(cryptoPayload);
+});
+
+Deno.bench("Crypto - XChaCha20-Poly1305 Encrypt", () => {
+  encryptXChaCha20Poly1305(cryptoPayload, cryptoKey);
+});
+
+Deno.bench("Crypto - XChaCha20-Poly1305 Decrypt", () => {
+  decryptXChaCha20Poly1305(cryptoCiphertext, cryptoKey, cryptoNonce);
 });
 

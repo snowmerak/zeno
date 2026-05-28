@@ -11,6 +11,7 @@
     "test:http-client": "deno test tests/http-client --allow-net --unstable-net --allow-read --allow-write",
     "test:db": "deno test tests/db --allow-net --unstable-net --allow-read --allow-write",
     "test:bufio": "deno test tests/bufio --allow-net --unstable-net --allow-read --allow-write",
+    "test:crypto": "deno test tests/crypto --allow-net --unstable-net --allow-read --allow-write",
     "test:coverage": "deno test tests/http --allow-net --unstable-net --allow-read --allow-write --coverage=coverage && deno coverage coverage --html",
     "bench": "deno bench --allow-read --allow-write --allow-net --unstable-net",
     "fmt": "deno fmt",

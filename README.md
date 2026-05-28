@@ -20,6 +20,7 @@
 | `@zeno/codec`  | Binary serialization & TCP packet framing        | Fully implemented (Varint, ZigZag)  |
 | `@zeno/db`     | In-process Log-Structured KV Database Engine      | Fully implemented (Bitcask style)   |
 | `@zeno/bufio`  | Go-inspired high-performance buffered I/O library | Fully implemented (Zero-dependency) |
+| `@zeno/crypto` | Zero-dependency BLAKE3 and XChaCha20-Poly1305 AEAD | Fully implemented (Natively vendored) |
 
 
 ## Getting Started
@@ -38,7 +39,7 @@ One of the core philosophies of this project:
 
 > **Whenever you add or change a feature, you must also write/update the corresponding agent skill.**
 
-- `skills/http/SKILL.md`, `skills/net/SKILL.md`, `skills/log/SKILL.md`, `skills/http-client/SKILL.md`, `skills/cache/SKILL.md`, `skills/codec/SKILL.md`, `skills/db/SKILL.md`, and `skills/bufio/SKILL.md` are the official design documents.
+- `skills/http/SKILL.md`, `skills/net/SKILL.md`, `skills/log/SKILL.md`, `skills/http-client/SKILL.md`, `skills/cache/SKILL.md`, `skills/codec/SKILL.md`, `skills/db/SKILL.md`, `skills/bufio/SKILL.md`, and `skills/crypto/SKILL.md` are the official design documents.
 - Code changes ↔ skill updates must always happen together.
 
 ## Structure
@@ -53,7 +54,8 @@ zeno/
 ├── codec/                # @zeno/codec (Varint serialization & TCP packet framing)
 ├── db/                   # @zeno/db (Log-structured Bitcask-like database engine)
 ├── bufio/                # @zeno/bufio (Go-inspired high-performance buffered I/O)
-├── skills/               # Agent skills (http/, net/, log/, http-client/, cache/, codec/, db/, bufio/)
+├── crypto/               # @zeno/crypto (Zero-dependency BLAKE3 and XChaCha20-Poly1305 AEAD)
+├── skills/               # Agent skills (http/, net/, log/, http-client/, cache/, codec/, db/, bufio/, crypto/)
 ├── examples/             # Library usage examples (self-dogfood)
 ├── tests/                # Core test suites
 ├── scripts/bench/        # Performance benchmarking
